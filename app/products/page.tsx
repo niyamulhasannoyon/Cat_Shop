@@ -18,6 +18,7 @@ function ProductsCatalogContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<number>(3000);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState<boolean>(false);
 
   // Sync state with URL search parameters
   useEffect(() => {
@@ -59,11 +60,24 @@ function ProductsCatalogContent() {
           )}
         </div>
 
+        {/* Mobile Filter Toggle Button */}
+        <div className="flex lg:hidden justify-between items-center bg-white p-4 rounded-xl border border-brand-beige-dark shadow-sm gap-4">
+          <div className="text-xs font-semibold text-brand-charcoal">
+            ফিল্টার অপশন খুঁজে দেখুন
+          </div>
+          <button
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-4 py-2 rounded-full text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+          >
+            <span>{mobileFiltersOpen ? "ফিল্টার বন্ধ করুন ✕" : "ফিল্টার দেখান 🛠️"}</span>
+          </button>
+        </div>
+
         {/* Catalog Grid Structure */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
           {/* Filters Sidebar */}
-          <div className="bg-white rounded-2xl p-6 border border-brand-beige-dark shadow-sm h-fit space-y-6">
+          <div className={`${mobileFiltersOpen ? "block" : "hidden lg:block"} bg-white rounded-2xl p-6 border border-brand-beige-dark shadow-sm h-fit space-y-6`}>
             <h2 className="text-base font-bold text-brand-charcoal border-b border-brand-beige-dark pb-3">ফিল্টার অপশন</h2>
             
             {/* Category Filter */}

@@ -113,19 +113,19 @@ export default function CartPage() {
               {cartItems.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white rounded-2xl border border-brand-beige-dark p-4 sm:p-5 flex gap-4 items-center justify-between shadow-sm"
+                  className="bg-white rounded-2xl border border-brand-beige-dark p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center justify-between shadow-sm"
                 >
                   {/* Info details */}
-                  <div className="flex gap-4 items-center flex-1 min-w-0">
-                    <span className="text-3xl p-2.5 bg-brand-beige rounded-xl border border-brand-beige-dark">📦</span>
+                  <div className="flex gap-3 sm:gap-4 items-center flex-1 min-w-0">
+                    <span className="text-2xl sm:text-3xl p-2 sm:p-2.5 bg-brand-beige rounded-xl border border-brand-beige-dark flex-shrink-0">📦</span>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-semibold text-brand-charcoal truncate">{item.name}</h3>
-                      <p className="text-xs text-brand-forest font-bold mt-1">৳{item.price.toLocaleString("bn-BD")}</p>
+                      <h3 className="text-xs sm:text-sm font-semibold text-brand-charcoal truncate">{item.name}</h3>
+                      <p className="text-[11px] sm:text-xs text-brand-forest font-bold mt-1">৳{item.price.toLocaleString("bn-BD")}</p>
                     </div>
                   </div>
 
                   {/* Quantity Controller & Delete */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-brand-beige-dark pt-3 sm:pt-0 w-full sm:w-auto">
                     <div className="flex items-center bg-brand-beige border border-brand-beige-dark rounded-full px-2 py-1">
                       <button
                         onClick={() => updateQuantity(item.id, -1)}
@@ -144,7 +144,7 @@ export default function CartPage() {
 
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="p-2 text-stone-400 hover:text-red-700 hover:bg-stone-50 rounded-full transition-colors focus:outline-none"
+                      className="p-2 text-stone-400 hover:text-red-700 hover:bg-stone-55 rounded-full transition-colors focus:outline-none"
                       aria-label="Remove item"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

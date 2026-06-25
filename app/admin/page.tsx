@@ -433,12 +433,12 @@ export default function AdminDashboard() {
                 <table className="min-w-full divide-y divide-brand-beige-dark">
                   <thead className="bg-brand-beige">
                     <tr className="text-left text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                      <th className="py-4 px-6">পণ্যের বিবরণ</th>
-                      <th className="py-4 px-6">আইডি</th>
-                      <th className="py-4 px-6">ক্যাটাগরি</th>
-                      <th className="py-4 px-6">ব্র্যান্ড</th>
-                      <th className="py-4 px-6">মূল্য</th>
-                      <th className="py-4 px-6 text-right">অ্যাকশন</th>
+                      <th className="py-3 px-3 sm:py-4 sm:px-6">পণ্যের বিবরণ</th>
+                      <th className="py-3 px-3 sm:py-4 sm:px-6">আইডি</th>
+                      <th className="py-3 px-3 sm:py-4 sm:px-6">ক্যাটাগরি</th>
+                      <th className="py-3 px-3 sm:py-4 sm:px-6">ব্র্যান্ড</th>
+                      <th className="py-3 px-3 sm:py-4 sm:px-6">মূল্য</th>
+                      <th className="py-3 px-3 sm:py-4 sm:px-6 text-right">অ্যাকশন</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-brand-beige-dark bg-white text-xs">
@@ -447,16 +447,16 @@ export default function AdminDashboard() {
                       const brand = product.brand || "Pawsome";
                       return (
                         <tr key={product.id} className="hover:bg-brand-beige/20 text-brand-charcoal">
-                          <td className="py-4 px-6 font-semibold">{product.name}</td>
-                          <td className="py-4 px-6 font-mono text-stone-400">{product.id}</td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 font-semibold">{product.name}</td>
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 font-mono text-stone-400">{product.id}</td>
+                          <td className="py-3 px-3 sm:py-4 sm:px-6">
                             <span className="px-2.5 py-0.5 rounded-full bg-brand-forest/5 text-brand-forest border border-brand-forest/10 font-medium">
                               {category === "cats" ? "🐱 বিড়াল" : category === "dogs" ? "🐶 কুকুর" : "🦜 পাখি"}
                             </span>
                           </td>
-                          <td className="py-4 px-6 text-stone-500 font-medium">{brand}</td>
-                          <td className="py-4 px-6 font-bold text-brand-forest">৳{product.price.toLocaleString("bn-BD")}</td>
-                          <td className="py-4 px-6 text-right">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 text-stone-500 font-medium">{brand}</td>
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 font-bold text-brand-forest">৳{product.price.toLocaleString("bn-BD")}</td>
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 text-right">
                             <button
                               onClick={() => {
                                 if (confirm(`আপনি কি সত্যিই "${product.name}" মুছতে চান?`)) {
@@ -495,28 +495,28 @@ export default function AdminDashboard() {
                   <table className="min-w-full divide-y divide-brand-beige-dark">
                     <thead className="bg-brand-beige">
                       <tr className="text-left text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                        <th className="py-4 px-6">অর্ডার আইডি</th>
-                        <th className="py-4 px-6">তারিখ</th>
-                        <th className="py-4 px-6">ক্রেতার বিবরণ</th>
-                        <th className="py-4 px-6">পণ্যের তালিকা (পরিমাণ)</th>
-                        <th className="py-4 px-6">মোট বিল</th>
-                        <th className="py-4 px-6">পেমেন্ট মেথড</th>
-                        <th className="py-4 px-6 text-center">স্ট্যাটাস আপডেট</th>
+                        <th className="py-3 px-3 sm:py-4 sm:px-6">অর্ডার আইডি</th>
+                        <th className="py-3 px-3 sm:py-4 sm:px-6">তারিখ</th>
+                        <th className="py-3 px-3 sm:py-4 sm:px-6">ক্রেতার বিবরণ</th>
+                        <th className="py-3 px-3 sm:py-4 sm:px-6">পণ্যের তালিকা (পরিমাণ)</th>
+                        <th className="py-3 px-3 sm:py-4 sm:px-6">মোট বিল</th>
+                        <th className="py-3 px-3 sm:py-4 sm:px-6">পেমেন্ট মেথড</th>
+                        <th className="py-3 px-3 sm:py-4 sm:px-6 text-center">স্ট্যাটাস আপডেট</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-brand-beige-dark bg-white text-xs">
                       {orders.map((order) => (
                         <tr key={order.id} className="hover:bg-brand-beige/20 text-brand-charcoal items-start">
-                          <td className="py-4 px-6 font-bold font-mono text-brand-forest">{order.id}</td>
-                          <td className="py-4 px-6 text-stone-400 font-light">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 font-bold font-mono text-brand-forest">{order.id}</td>
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 text-stone-400 font-light">
                             {new Date(order.createdAt).toLocaleDateString("bn-BD")}
                           </td>
-                          <td className="py-4 px-6 space-y-1">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 space-y-1">
                             <p className="font-semibold">{order.customerName}</p>
                             <p className="text-[10px] text-stone-500">{order.customerPhone}</p>
                             <p className="text-[10px] text-stone-400 font-light leading-relaxed max-w-[150px] break-words">{order.customerAddress}</p>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6">
                             <ul className="space-y-1 text-stone-600">
                               {order.items.map((item, index) => (
                                 <li key={index} className="flex gap-2 items-center">
@@ -527,16 +527,16 @@ export default function AdminDashboard() {
                               ))}
                             </ul>
                           </td>
-                          <td className="py-4 px-6 font-bold text-brand-charcoal">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 font-bold text-brand-charcoal">
                             ৳{order.grandTotal.toLocaleString("bn-BD")}
                             <p className="text-[9px] text-stone-400 font-light mt-0.5">(ডেলিভারি: ৳{order.shippingFee})</p>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6">
                             <span className="px-2 py-0.5 text-[10px] rounded bg-stone-100 border border-stone-200 text-stone-600 font-semibold uppercase tracking-wider">
                               {order.paymentMethod === "cod" ? "Cash (COD)" : "bKash/Nagad"}
                             </span>
                           </td>
-                          <td className="py-4 px-6 text-center">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 text-center">
                             <select
                               value={order.status}
                               onChange={(e) => updateOrderStatus(order.id, e.target.value as Order["status"])}
