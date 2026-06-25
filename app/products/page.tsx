@@ -1,0 +1,227 @@
+"use client";
+
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useShop } from "@/context/ShopContext";
+import { Product } from "@/types";
+
+function ProductsCatalogContent() {
+  const searchParams = useSearchParams();
+  const { addToCart, products } = useShop();
+
+  // Search parameters states
+  const categoryParam = searchParams.get("cat") || "";
+  const queryParam = searchParams.get("search") || "";
+
+  // Filtering states
+  const [searchVal, setSearchVal] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedBrand, setSelectedBrand] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<number>(3000);
+
+  // Sync state with URL search parameters
+  useEffect(() => {
+    setSearchVal(queryParam);
+    setSelectedCategory(categoryParam);
+  }, [queryParam, categoryParam]);
+
+  // Filter handlers
+  const filteredProducts = products.filter((product) => {
+    const category = product.category || "cats";
+    const brand = product.brand || "Pawsome";
+
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchVal.toLowerCase()) ||
+      category.toLowerCase().includes(searchVal.toLowerCase()) ||
+      brand.toLowerCase().includes(searchVal.toLowerCase());
+
+    const matchesCategory = selectedCategory ? category === selectedCategory : true;
+    const matchesBrand = selectedBrand ? brand === selectedBrand : true;
+    const matchesPrice = product.price <= maxPrice;
+
+    return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
+  });
+
+  return (
+    <div className="bg-brand-beige flex-1 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-brand-beige-dark pb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-brand-charcoal">পেট এক্সেসরিজ কালেকশন</h1>
+            <p className="text-sm text-stone-500 font-light mt-1">প্রিমিয়াম কোয়ালিটির প্রোডাক্ট খুঁজুন ও কার্টে যোগ করুন</p>
+          </div>
+          {searchVal && (
+            <div className="text-xs bg-brand-forest/5 text-brand-forest px-3 py-1.5 rounded-full border border-brand-forest/15 font-medium">
+              অনুসন্ধানের ফলাফল: &quot;{searchVal}&quot; ({filteredProducts.length}টি প্রোডাক্ট পাওয়া গেছে)
+            </div>
+          )}
+        </div>
+
+        {/* Catalog Grid Structure */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          
+          {/* Filters Sidebar */}
+          <div className="bg-white rounded-2xl p-6 border border-brand-beige-dark shadow-sm h-fit space-y-6">
+            <h2 className="text-base font-bold text-brand-charcoal border-b border-brand-beige-dark pb-3">ফিল্টার অপশন</h2>
+            
+            {/* Category Filter */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">পোষা প্রাণী</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full bg-brand-beige border border-brand-beige-dark text-sm rounded-lg p-2.5 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest"
+              >
+                <option value="">সকল ক্যাটাগরি</option>
+                <option value="cats">বিড়াল (Cats)</option>
+                <option value="dogs">কুকুর (Dogs)</option>
+                <option value="birds">পাখি (Birds)</option>
+              </select>
+            </div>
+
+            {/* Brand Filter */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">ব্র্যান্ড</label>
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="w-full bg-brand-beige border border-brand-beige-dark text-sm rounded-lg p-2.5 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest"
+              >
+                <option value="">সকল ব্র্যান্ড</option>
+                <option value="Pawsome">Pawsome</option>
+                <option value="MeowMix">MeowMix</option>
+                <option value="DoggyStyles">DoggyStyles</option>
+              </select>
+            </div>
+
+            {/* Price Filter */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">সর্বোচ্চ বাজেট</label>
+                <span className="text-xs font-semibold text-brand-forest">৳{maxPrice.toLocaleString("bn-BD")}</span>
+              </div>
+              <input
+                type="range"
+                min="300"
+                max="3000"
+                step="50"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(Number(e.target.value))}
+                className="w-full h-1.5 bg-brand-beige-dark rounded-lg appearance-none cursor-pointer accent-brand-forest"
+              />
+              <div className="flex justify-between text-[10px] text-stone-400">
+                <span>৳৩০০</span>
+                <span>৳৩,০০০</span>
+              </div>
+            </div>
+
+            {/* Reset Filters */}
+            <button
+              onClick={() => {
+                setSelectedCategory("");
+                setSelectedBrand("");
+                setMaxPrice(3000);
+                setSearchVal("");
+              }}
+              className="w-full bg-brand-beige hover:bg-brand-beige-dark text-brand-charcoal py-2.5 rounded-xl text-xs font-semibold transition-colors border border-brand-beige-dark"
+            >
+              সব ফিল্টার মুছুন
+            </button>
+          </div>
+
+          {/* Catalog Grid */}
+          <div className="lg:col-span-3">
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProducts.map((product) => {
+                  const category = product.category || "cats";
+                  const brand = product.brand || "Pawsome";
+                  
+                  return (
+                    <div
+                      key={product.id}
+                      className="bg-white rounded-2xl border border-brand-beige-dark p-5 flex flex-col justify-between hover:shadow-md transition-shadow"
+                    >
+                      <div className="space-y-3.5">
+                        {/* Tags */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] bg-brand-forest/5 text-brand-forest px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider border border-brand-forest/10">
+                            {category === "cats" ? "বিড়াল" : category === "dogs" ? "কুকুর" : "পাখি"}
+                          </span>
+                          <span className="text-[10px] text-stone-400">{brand}</span>
+                        </div>
+
+                        {/* Visual Product Image with Fallback */}
+                        <div className="h-44 bg-brand-beige rounded-xl overflow-hidden border border-brand-beige-dark flex items-center justify-center relative">
+                          {product.id === "1" ? (
+                            <img src="/collar.png" alt={product.name} className="w-full h-full object-cover" />
+                          ) : product.id === "cat_litter_premium" ? (
+                            <img src="/litter.png" alt={product.name} className="w-full h-full object-cover" />
+                          ) : product.id === "leather_dog_leash" ? (
+                            <img src="/leash.png" alt={product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-5xl">{category === "cats" ? "🐱" : category === "dogs" ? "🐶" : "🦜"}</span>
+                          )}
+                        </div>
+
+                        <h3 className="text-sm font-semibold text-brand-charcoal tracking-tight line-clamp-2 h-10 leading-snug">
+                          {product.name}
+                        </h3>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-brand-beige-dark flex items-center justify-between">
+                        <span className="text-base font-bold text-brand-forest">
+                          ৳{product.price.toLocaleString("bn-BD")}
+                        </span>
+                        <button
+                          onClick={() => addToCart(product)}
+                          className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-4 py-2 rounded-full text-xs font-semibold transition-colors focus:outline-none"
+                        >
+                          কার্টে যোগ করুন
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-12 text-center border border-brand-beige-dark shadow-sm space-y-4">
+                <span className="text-5xl block">🔍</span>
+                <h3 className="text-base font-semibold text-brand-charcoal">কোনো পণ্য পাওয়া যায়নি!</h3>
+                <p className="text-xs text-stone-500 font-light max-w-sm mx-auto leading-relaxed">
+                  অনুগ্রহ করে আপনার অনুসন্ধানের কি-ওয়ার্ড পরিবর্তন করুন অথবা ফিল্টার রিসেট করে আবার চেষ্টা করুন।
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedCategory("");
+                    setSelectedBrand("");
+                    setMaxPrice(3000);
+                    setSearchVal("");
+                  }}
+                  className="bg-brand-forest text-brand-beige px-6 py-2.5 rounded-full text-xs font-semibold hover:bg-brand-forest-light transition-colors"
+                >
+                  ক্যাটালগ রিসেট করুন
+                </button>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ProductsCatalog() {
+  return (
+    <Suspense fallback={
+      <div className="bg-brand-beige flex-1 flex items-center justify-center min-h-screen">
+        <div className="text-brand-forest font-semibold text-sm">লোড হচ্ছে...</div>
+      </div>
+    }>
+      <ProductsCatalogContent />
+    </Suspense>
+  );
+}

@@ -1,26 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F5F2EB;
-  --foreground: #2C2C2C;
+  --background: #F9F7F2;
+  --foreground: #2C3E50;
 }
 
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   
-  /* Brand Theme Colors (Strictly No Blue) */
-  --color-brand-forest: #1E3F20;
-  --color-brand-forest-light: #2C5E2F;
-  --color-brand-charcoal: #2C2C2C;
-  --color-brand-charcoal-dark: #1A1A1A;
-  --color-brand-beige: #F5F2EB;
-  --color-brand-beige-dark: #E8E3D7;
+  /* Brand Theme Colors matching the UX Design System specifications */
+  --color-brand-forest: #2D5A27;       /* Primary: Forest Green */
+  --color-brand-forest-light: #20411C; /* Darker primary forest green for active/hover */
+  --color-brand-accent: #E67E22;       /* Secondary (CTA): Warm Amber */
+  --color-brand-charcoal: #2C3E50;     /* Text: Dark Charcoal */
+  --color-brand-charcoal-dark: #1F2C39;/* Deep dark charcoal for footer/headers */
+  --color-brand-beige: #F9F7F2;        /* Background: Soft Cream */
+  --color-brand-beige-dark: #E5E7EB;   /* Border: Light Gray */
 }
 
 /* Global Outline & Focus States - Overriding defaults to prevent blue borders/rings */
 *:focus-visible {
-  outline: 2px solid #1E3F20 !important;
+  outline: 2px solid #2D5A27 !important;
   outline-offset: 2px;
 }
 

@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { useCart } from "@/context/CartContext";
+import { useRouter } from "next/navigation";
+import { useShop } from "@/context/ShopContext";
 
 export default function Navbar() {
-  const { cartCount, cartTotal } = useCart();
+  const router = useRouter();
+  const { cartCount, cartTotal } = useShop();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const FREE_SHIPPING_THRESHOLD = 3000;
@@ -12,8 +14,10 @@ export default function Navbar() {
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Searching for:", searchQuery);
-    // In production, this redirects to: /products?search=searchQuery
+    if (searchQuery.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setMobileMenuOpen(false);
+    }
   };
 
   return (

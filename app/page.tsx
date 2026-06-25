@@ -1,29 +1,9 @@
 "use client";
 
-import React from "react";
-import { useCart } from "@/context/CartContext";
+import React, { useState, useEffect } from "react";
+import { useShop } from "@/context/ShopContext";
 
 export default function Home() {
-  const { addToCart, cartTotal } = useCart();
-  const FREE_SHIPPING_THRESHOLD = 3000;
-  const remainsForFreeShipping = FREE_SHIPPING_THRESHOLD - cartTotal;
-
-  const handleAddCatLitter = () => {
-    addToCart({
-      id: "cat_litter_premium",
-      name: "প্রিমিয়াম সিলিকা ক্যাট লিটার (৫ লিটার)",
-      price: 850,
-    });
-  };
-
-  const handleAddDogLeash = () => {
-    addToCart({
-      id: "leather_dog_leash",
-      name: "লেদার ডগ লিশ ও হারনেস বেল্ট",
-      price: 1100,
-    });
-  };
-
   return (
     <div className="bg-brand-beige flex-1 flex flex-col font-sans">
       
@@ -39,7 +19,7 @@ export default function Home() {
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-brand-charcoal leading-tight">
               আপনার শখের পোষা প্রাণীর জন্য <br />
-              <span className="text-brand-forest">সবচেয়ে সেরা এক্সেসরিজ</span>
+              <span className="text-brand-forest">সবচেয়ে সেরা এক্সেসরিজ</span>
             </h1>
             
             <p className="text-base sm:text-lg text-stone-600 max-w-xl mx-auto lg:mx-0 font-light leading-relaxed">
@@ -62,65 +42,30 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Hero Right Interactive Dashboard (Visual Element) */}
-          <div className="bg-brand-beige rounded-3xl p-8 border border-brand-beige-dark shadow-sm space-y-6">
-            <div className="flex justify-between items-center border-b border-brand-beige-dark pb-4">
-              <h2 className="text-lg font-bold text-brand-charcoal">কার্ট থ্রেশহোল্ড সিমুলেটর</h2>
-              <span className="text-xs bg-brand-forest text-brand-beige px-2.5 py-0.5 rounded-full font-medium">Interactive Demo</span>
-            </div>
-            
-            <p className="text-sm text-stone-600 font-light leading-relaxed">
-              নিচের প্রোডাক্টগুলো যোগ করে দেখুন কিভাবে ঘোষণা বারটিতে থাকা <strong>ফ্রি ডেলিভারি ইন্ডিকেটর</strong> রিয়েল-টাইমে আপডেট হয়!
-            </p>
+          {/* Hero Right Content: Premium Lifestyle Image Slideshow */}
+          <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden border border-brand-beige-dark shadow-md bg-brand-beige">
+            {(() => {
+              const HERO_SLIDES = ["/hero.png", "/hero2.png", "/hero3.png"];
+              const [currentSlide, setCurrentSlide] = React.useState(0);
 
-            <div className="space-y-4">
-              {/* Product Item 1 */}
-              <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-brand-beige-dark hover:border-brand-forest/30 transition-all">
-                <div>
-                  <h3 className="text-sm font-semibold text-brand-charcoal">প্রিমিয়াম সিলিকা ক্যাট লিটার (৫ লিটার)</h3>
-                  <p className="text-xs text-stone-500 mt-1">৳৮৫০ • উচ্চ শোষণ ক্ষমতা সম্পন্ন</p>
-                </div>
-                <button
-                  onClick={handleAddCatLitter}
-                  className="bg-brand-forest text-brand-beige px-4 py-2 rounded-full text-xs font-semibold hover:bg-brand-forest-light transition-colors"
-                >
-                  যোগ করুন +
-                </button>
-              </div>
+              React.useEffect(() => {
+                const interval = setInterval(() => {
+                  setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+                }, 4000);
+                return () => clearInterval(interval);
+              }, []);
 
-              {/* Product Item 2 */}
-              <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-brand-beige-dark hover:border-brand-forest/30 transition-all">
-                <div>
-                  <h3 className="text-sm font-semibold text-brand-charcoal">লেদার ডগ লিশ ও হারনেস বেল্ট</h3>
-                  <p className="text-xs text-stone-500 mt-1">৳১,১০০ • শতভাগ আসল চামড়া</p>
-                </div>
-                <button
-                  onClick={handleAddDogLeash}
-                  className="bg-brand-forest text-brand-beige px-4 py-2 rounded-full text-xs font-semibold hover:bg-brand-forest-light transition-colors"
-                >
-                  যোগ করুন +
-                </button>
-              </div>
-            </div>
-
-            {/* Dynamic Card Progress inside Hero */}
-            <div className="bg-white/80 p-4 rounded-xl border border-brand-beige-dark space-y-2.5">
-              <div className="flex justify-between text-xs font-semibold text-brand-charcoal">
-                <span>ডেলিভারি প্রগতি:</span>
-                <span>৳{cartTotal.toLocaleString("bn-BD")} / ৳৩,০০০</span>
-              </div>
-              <div className="w-full bg-brand-beige-dark h-2 rounded-full overflow-hidden">
-                <div 
-                  className="bg-brand-forest h-2 rounded-full transition-all duration-500" 
-                  style={{ width: `${Math.min((cartTotal / FREE_SHIPPING_THRESHOLD) * 100, 100)}%` }}
+              return HERO_SLIDES.map((slide, idx) => (
+                <img
+                  key={slide}
+                  src={slide}
+                  alt={`Paws & Co. Premium Pet Lifestyle ${idx + 1}`}
+                  className={`absolute inset-0 object-cover w-full h-full transition-opacity duration-1000 ${
+                    idx === currentSlide ? "opacity-100 scale-102" : "opacity-0 scale-100"
+                  }`}
                 />
-              </div>
-              <p className="text-[11px] text-stone-500 text-center font-light mt-1">
-                {remainsForFreeShipping > 0 
-                  ? `আর মাত্র ৳${remainsForFreeShipping.toLocaleString("bn-BD")} সমমূল্যের পণ্য কিনলে ফ্রি শিপিং পাবেন!` 
-                  : "অভিনন্দন! আপনি ফ্রি ডেলিভারি কোটা অর্জন করেছেন।"}
-              </p>
-            </div>
+              ));
+            })()}
           </div>
 
         </div>
@@ -172,7 +117,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. Shop Categories & Promos */}
+
+
+      {/* 4. Shop Categories & Promos */}
       <section id="shop" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold text-brand-charcoal">পোষা প্রাণীর ক্যাটাগরি</h2>
@@ -221,7 +168,7 @@ export default function Home() {
       </section>
 
       {/* 4. Bundle & Save Promo */}
-      <section id="bundles" className="bg-[#1E3F20] text-brand-beige py-16 px-4 sm:px-6 lg:px-8 border-t border-b border-brand-beige-dark">
+      <section id="bundles" className="bg-brand-forest text-brand-beige py-16 px-4 sm:px-6 lg:px-8 border-t border-b border-brand-beige-dark">
         <div className="max-w-5xl mx-auto text-center space-y-8">
           <div className="inline-block bg-white/10 px-4 py-1.5 rounded-full text-brand-beige-dark text-xs font-semibold uppercase tracking-wider">
             🎉 স্পেশাল অফার
@@ -245,7 +192,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. Sleek Minimalist Footer Footer */}
+      {/* 5. Sleek Minimalist Footer */}
       <footer className="w-full bg-[#1A1A1A] text-stone-400 py-12 px-4 sm:px-6 lg:px-8 border-t border-neutral-900">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-neutral-800">
           <div className="space-y-4">
@@ -265,7 +212,7 @@ export default function Home() {
           <div>
             <h4 className="text-xs uppercase font-bold text-white tracking-wider mb-4">গ্রাহক সেবা</h4>
             <ul className="space-y-2 text-xs font-light">
-              <li><a href="/tracking" className="hover:text-brand-beige transition-colors">অর্ডার ট্র্যাকিং</a></li>
+              <li><a href="/tracking" className="hover:text-brand-beige transition-colors">অर्डर ট্র্যাকিং</a></li>
               <li><a href="/faq" className="hover:text-brand-beige transition-colors">জিজ্ঞাসাবাদ (FAQs)</a></li>
               <li><a href="https://wa.me/8801700000000" className="hover:text-brand-beige transition-colors">হোয়াটসঅ্যাপ সাপোর্ট</a></li>
             </ul>
