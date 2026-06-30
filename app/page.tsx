@@ -9,15 +9,15 @@ export default function Home() {
       
       {/* 1. Hero / Premium Banner Section */}
       <section className="relative overflow-hidden py-20 lg:py-28 px-4 sm:px-6 lg:px-8 border-b border-brand-beige-dark bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
           
           {/* Hero Left Content */}
-          <div className="space-y-6 text-center lg:text-left">
+          <div className="space-y-6 text-center lg:text-left lg:pr-10">
             <div className="inline-flex items-center gap-2 bg-brand-forest/5 px-4 py-1.5 rounded-full text-brand-forest text-xs font-semibold uppercase tracking-wider">
               ✨ বাংলাদেশে প্রথম প্রিমিয়াম পেট শপ
             </div>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-brand-charcoal leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-brand-charcoal leading-[1.2]">
               আপনার শখের পোষা প্রাণীর জন্য <br />
               <span className="text-brand-forest">সবচেয়ে সেরা এক্সেসরিজ</span>
             </h1>
@@ -29,13 +29,13 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
               <a
                 href="#shop"
-                className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-8 py-3.5 rounded-full text-sm font-semibold tracking-wider uppercase transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-brand-forest"
+                className="w-full sm:w-auto sm:min-w-[200px] text-center bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-8 py-3.5 rounded-full text-sm font-semibold tracking-wider uppercase transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-brand-forest"
               >
                 শপিং শুরু করুন
               </a>
               <a
                 href="#bundles"
-                className="bg-brand-beige hover:bg-brand-beige-dark text-brand-charcoal px-8 py-3.5 rounded-full text-sm font-semibold tracking-wider uppercase transition-all border border-brand-beige-dark hover:border-brand-charcoal focus:outline-none focus:ring-2 focus:ring-brand-charcoal"
+                className="w-full sm:w-auto sm:min-w-[200px] text-center bg-brand-beige hover:bg-brand-beige-dark text-brand-charcoal px-8 py-3.5 rounded-full text-sm font-semibold tracking-wider uppercase transition-all border border-brand-beige-dark hover:border-brand-charcoal focus:outline-none focus:ring-2 focus:ring-brand-charcoal"
               >
                 বান্ডেল ও সেভ অফার
               </a>
@@ -60,8 +60,10 @@ export default function Home() {
                   key={slide}
                   src={slide}
                   alt={`Paws & Co. Premium Pet Lifestyle ${idx + 1}`}
-                  className={`absolute inset-0 object-cover w-full h-full transition-opacity duration-1000 ${
-                    idx === currentSlide ? "opacity-100 scale-102" : "opacity-0 scale-100"
+                  className={`absolute inset-0 object-cover w-full h-full transition-all duration-1000 ease-in-out ${
+                    idx === currentSlide 
+                      ? "opacity-100 scale-[1.04] z-10 pointer-events-auto" 
+                      : "opacity-0 scale-100 z-0 pointer-events-none"
                   }`}
                 />
               ));
@@ -117,8 +119,6 @@ export default function Home() {
         </div>
       </section>
 
-
-
       {/* 4. Shop Categories & Promos */}
       <section id="shop" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center space-y-2">
@@ -128,39 +128,69 @@ export default function Home() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           
-          {/* Cat Card */}
-          <div className="group relative bg-white rounded-2xl overflow-hidden border border-brand-beige-dark shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="h-64 bg-brand-beige flex items-center justify-center p-8 group-hover:scale-105 transition-transform duration-300">
-              <span className="text-6xl">🐱</span>
+          {/* Cat Category Card */}
+          <div className="group relative bg-white rounded-2xl overflow-hidden border border-brand-beige-dark shadow-sm hover:shadow-[0_10px_30px_rgba(45,90,39,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col">
+            <div className="h-64 bg-brand-beige flex items-center justify-center p-8">
+              <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center border border-brand-beige-dark shadow-sm group-hover:border-brand-forest/20 group-hover:shadow-md transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-brand-forest">
+                  <path d="M12 21c-4.418 0-8-3.582-8-8 0-3.55 2.317-6.56 5.5-7.58L6 2l4 3.5C10.63 5.17 11.3 5 12 5s1.37.17 2 .5L18 2l-3.5 3.42c3.183 1.02 5.5 4.03 5.5 7.58 0 4.418-3.582 8-8 8z" />
+                  <circle cx="9" cy="12" r="1.2" fill="currentColor" />
+                  <circle cx="15" cy="12" r="1.2" fill="currentColor" />
+                  <path d="M12 14.5l-1-1h2z" fill="currentColor" />
+                  <path d="M10 16.5c1 1 3 1 4 0" />
+                </svg>
+              </div>
             </div>
-            <div className="p-6 bg-white space-y-2 text-center border-t border-brand-beige-dark">
-              <h3 className="text-lg font-bold text-brand-charcoal">বিড়াল (Cats)</h3>
-              <p className="text-xs text-stone-500 font-light">ফুড বোল, বেল্ট, ক্যাট নিপ ও খেলনা সামগ্রী</p>
-              <a href="/products?cat=cats" className="inline-block pt-2 text-xs font-semibold text-brand-forest hover:underline">ব্রাউজ করুন →</a>
-            </div>
-          </div>
-
-          {/* Dog Card */}
-          <div className="group relative bg-white rounded-2xl overflow-hidden border border-brand-beige-dark shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="h-64 bg-brand-beige flex items-center justify-center p-8 group-hover:scale-105 transition-transform duration-300">
-              <span className="text-6xl">🐶</span>
-            </div>
-            <div className="p-6 bg-white space-y-2 text-center border-t border-brand-beige-dark">
-              <h3 className="text-lg font-bold text-brand-charcoal">কুকুর (Dogs)</h3>
-              <p className="text-xs text-stone-500 font-light">আউটডোর লিশ, লেদার কলার ও প্রিমিয়াম খাবার</p>
-              <a href="/products?cat=dogs" className="inline-block pt-2 text-xs font-semibold text-brand-forest hover:underline">ব্রাউজ করুন →</a>
+            <div className="p-6 bg-white space-y-2 text-center border-t border-brand-beige-dark flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-brand-charcoal">বিড়াল (Cats)</h3>
+                <p className="text-xs text-stone-500 font-light">ফুড বোল, বেল্ট, ক্যাট নিপ ও খেলনা সামগ্রী</p>
+              </div>
+              <a href="/products?cat=cats" className="inline-block pt-3 text-xs font-semibold text-brand-forest hover:underline">ব্রাউজ করুন →</a>
             </div>
           </div>
 
-          {/* Birds Card */}
-          <div className="group relative bg-white rounded-2xl overflow-hidden border border-brand-beige-dark shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="h-64 bg-brand-beige flex items-center justify-center p-8 group-hover:scale-105 transition-transform duration-300">
-              <span className="text-6xl">🦜</span>
+          {/* Dog Category Card */}
+          <div className="group relative bg-white rounded-2xl overflow-hidden border border-brand-beige-dark shadow-sm hover:shadow-[0_10px_30px_rgba(45,90,39,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col">
+            <div className="h-64 bg-brand-beige flex items-center justify-center p-8">
+              <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center border border-brand-beige-dark shadow-sm group-hover:border-brand-forest/20 group-hover:shadow-md transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-brand-forest">
+                  <path d="M6 5c0-1.657 1-3 3-3h6c2 0 3 1.343 3 3v4.586c0 .53-.21 1.04-.586 1.414L15 13.414V17a3 3 0 01-6 0v-3.586L6.586 11c-.375-.374-.586-.884-.586-1.414V5z" />
+                  <path d="M6 5.5C4 5.5 3 7 3 9.5c0 3 2 4.5 3 2.5V5.5z" />
+                  <path d="M18 5.5c2 0 3 1.5 3 4c0 3-2 4.5-3 2.5V5.5z" />
+                  <circle cx="9.5" cy="9.5" r="1.2" fill="currentColor" />
+                  <circle cx="14.5" cy="9.5" r="1.2" fill="currentColor" />
+                  <path d="M11 12.5h2l-1 1z" fill="currentColor" />
+                </svg>
+              </div>
             </div>
-            <div className="p-6 bg-white space-y-2 text-center border-t border-brand-beige-dark">
-              <h3 className="text-lg font-bold text-brand-charcoal">পাখি ও অন্যান্য</h3>
-              <p className="text-xs text-stone-500 font-light">খাঁচার সামগ্রী, ভিটামিন সাপ্লিমেন্ট ও সিড মিক্স</p>
-              <a href="/products?cat=birds" className="inline-block pt-2 text-xs font-semibold text-brand-forest hover:underline">ব্রাউজ করুন →</a>
+            <div className="p-6 bg-white space-y-2 text-center border-t border-brand-beige-dark flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-brand-charcoal">কুকুর (Dogs)</h3>
+                <p className="text-xs text-stone-500 font-light">আউটডোর লিশ, লেদার কলার ও প্রিমিয়াম খাবার</p>
+              </div>
+              <a href="/products?cat=dogs" className="inline-block pt-3 text-xs font-semibold text-brand-forest hover:underline">ব্রাউজ করুন →</a>
+            </div>
+          </div>
+
+          {/* Birds Category Card */}
+          <div className="group relative bg-white rounded-2xl overflow-hidden border border-brand-beige-dark shadow-sm hover:shadow-[0_10px_30px_rgba(45,90,39,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col">
+            <div className="h-64 bg-brand-beige flex items-center justify-center p-8">
+              <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center border border-brand-beige-dark shadow-sm group-hover:border-brand-forest/20 group-hover:shadow-md transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-brand-forest">
+                  <path d="M15.5 8.5c0-2.5-2-4.5-4.5-4.5S6.5 6 6.5 8.5c0 1.5.5 2.5 1.5 3.5L7 19.5c0 1 1 1.5 2 1l2.5-3 2.5 3c1 .5 2 0 2-1l-1-7.5c1-1 1.5-2 1.5-3.5z" />
+                  <path d="M6.5 7.5L3 9l3.5 1.5Z" fill="currentColor" />
+                  <circle cx="9.5" cy="7.5" r="1.2" fill="currentColor" />
+                  <path d="M11 11.5c.5.5 1.5 1.5 1.5 3s-1 3.5-1.5 4" strokeWidth="1.2" strokeDasharray="2 2" />
+                </svg>
+              </div>
+            </div>
+            <div className="p-6 bg-white space-y-2 text-center border-t border-brand-beige-dark flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-brand-charcoal">পাখি ও অন্যান্য</h3>
+                <p className="text-xs text-stone-500 font-light">খাঁচার সামগ্রী, ভিটামিন সাপ্লিমেন্ট ও সিড মিক্স</p>
+              </div>
+              <a href="/products?cat=birds" className="inline-block pt-3 text-xs font-semibold text-brand-forest hover:underline">ব্রাউজ করুন →</a>
             </div>
           </div>
 

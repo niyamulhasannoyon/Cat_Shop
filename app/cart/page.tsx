@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const router = useRouter();
-  const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart, placeOrder } = useShop();
+  const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart, placeOrder, addToCart, products } = useShop();
 
   // Delivery configuration
   const FREE_SHIPPING_THRESHOLD = 3000;
@@ -312,16 +312,103 @@ export default function CartPage() {
 
           </div>
         ) : (
-          <div className="bg-white rounded-2xl p-16 text-center border border-brand-beige-dark shadow-sm space-y-4 max-w-lg mx-auto">
-            <span className="text-6xl block">🛒</span>
-            <h2 className="text-base font-semibold text-brand-charcoal">আপনার কার্টটি খালি!</h2>
-            <p className="text-xs text-stone-500 font-light">কার্টে কোনো পণ্য যোগ করা হয়নি। আমাদের চমৎকার ক্যাটালগ থেকে শপিং শুরু করুন।</p>
-            <button
-              onClick={() => router.push("/products")}
-              className="bg-brand-forest text-brand-beige px-6 py-2.5 rounded-full text-xs font-semibold hover:bg-brand-forest-light transition-colors"
-            >
-              পণ্য দেখতে যান
-            </button>
+          <div className="space-y-16">
+            {/* Empty State Card */}
+            <div className="bg-white rounded-3xl p-16 text-center border border-brand-beige-dark/50 shadow-sm space-y-6 max-w-lg mx-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" className="w-32 h-32 mx-auto text-brand-forest/20">
+                <circle cx="60" cy="60" r="55" fill="currentColor" opacity="0.05" />
+                <path d="M35 80h45l8-35H41M35 80L31 40h-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="42" cy="90" r="6" stroke="currentColor" strokeWidth="2" />
+                <circle cx="73" cy="90" r="6" stroke="currentColor" strokeWidth="2" />
+                <path d="M48 55c0-10 15-12 20-3s10-1 12 5M45 57c-2 2-2 6 1 8s8-1 10-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M78 28c-1-1.5-2.5-1.5-3.5-.5s-1 2.5 0 3.5l3.5 3.5 3.5-3.5c1-1 1-2.5 0-3.5s-2.5-1-3.5.5z" fill="currentColor" className="text-brand-forest/40" />
+              </svg>
+              
+              <div className="space-y-2">
+                <h2 className="text-lg font-bold text-brand-charcoal">আপনার কার্টটি খালি!</h2>
+                <p className="text-xs text-stone-500 font-light max-w-sm mx-auto leading-relaxed">
+                  আপনার শপিং কার্টে এখনও কোনো পণ্য যোগ করা হয়নি। আমাদের চমৎকার প্রিমিয়াম কালেকশন থেকে শপিং শুরু করুন।
+                </p>
+              </div>
+
+              <button
+                onClick={() => router.push("/products")}
+                className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-8 py-3 rounded-full text-xs font-semibold shadow-md transition-colors cursor-pointer"
+              >
+                পণ্য দেখতে যান
+              </button>
+            </div>
+
+            {/* Trending Items List */}
+            <div className="pt-8 border-t border-brand-beige-dark/50 max-w-5xl mx-auto space-y-8">
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-bold text-brand-charcoal">জনপ্রিয় পণ্যসমূহ (Trending Items)</h3>
+                <p className="text-xs text-stone-500 font-light">আমাদের ক্রেতাদের পছন্দের এবং কালেকশনের সেরা কিছু জিনিস</p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {products.slice(0, 3).map((product) => {
+                  const category = product.category || "cats";
+                  return (
+                    <div key={product.id} className="bg-white rounded-3xl border border-brand-beige-dark/45 p-6 flex flex-col justify-between hover:shadow-[0_8px_30px_rgba(45,90,39,0.06)] transition-all duration-300">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] bg-brand-forest/5 text-brand-forest px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border border-brand-forest/10">
+                            {category === "cats" ? "বিড়াল" : category === "dogs" ? "কুকুর" : "পাখি"}
+                          </span>
+                          <span className="text-[10px] text-stone-400">{product.brand}</span>
+                        </div>
+                        
+                        <div className="h-36 bg-brand-beige rounded-2xl overflow-hidden border border-brand-beige-dark/50 flex items-center justify-center relative">
+                          {product.id === "1" ? (
+                            <img src="/collar.png" alt={product.name} className="w-full h-full object-cover" />
+                          ) : product.id === "cat_litter_premium" ? (
+                            <img src="/litter.png" alt={product.name} className="w-full h-full object-cover" />
+                          ) : product.id === "leather_dog_leash" ? (
+                            <img src="/leash.png" alt={product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border border-brand-beige-dark/30 shadow-inner">
+                              {category === "cats" ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-brand-forest/60">
+                                  <path d="M12 21c-4.418 0-8-3.582-8-8 0-3.55 2.317-6.56 5.5-7.58L6 2l4 3.5C10.63 5.17 11.3 5 12 5s1.37.17 2 .5L18 2l-3.5 3.42c3.183 1.02 5.5 4.03 5.5 7.58 0 4.418-3.582 8-8 8z" />
+                                  <circle cx="9" cy="12" r="1" fill="currentColor" />
+                                  <circle cx="15" cy="12" r="1" fill="currentColor" />
+                                  <path d="M12 14.5l-1-1h2z" fill="currentColor" />
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-brand-forest/60">
+                                  <path d="M6 5c0-1.657 1-3 3-3h6c2 0 3 1.343 3 3v4.586c0 .53-.21 1.04-.586 1.414L15 13.414V17a3 3 0 01-6 0v-3.586L6.586 11c-.375-.374-.586-.884-.586-1.414V5z" />
+                                  <path d="M6 5.5C4 5.5 3 7 3 9.5c0 3 2 4.5 3 2.5V5.5z" />
+                                  <path d="M18 5.5c2 0 3 1.5 3 4c0 3-2 4.5-3 2.5V5.5z" />
+                                  <circle cx="9.5" cy="9.5" r="1" fill="currentColor" />
+                                  <circle cx="14.5" cy="9.5" r="1" fill="currentColor" />
+                                </svg>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <h4 className="text-xs font-semibold text-brand-charcoal tracking-tight line-clamp-2 h-10 leading-snug">
+                          {product.name}
+                        </h4>
+                      </div>
+                      
+                      <div className="mt-4 pt-4 border-t border-brand-beige-dark/50 flex items-center justify-between">
+                        <span className="text-sm font-bold text-brand-forest">
+                          ৳{product.price.toLocaleString("bn-BD")}
+                        </span>
+                        <button
+                          onClick={() => addToCart(product)}
+                          className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-4 py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                          কার্টে যোগ করুন
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 

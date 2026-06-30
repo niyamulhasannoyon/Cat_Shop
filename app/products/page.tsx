@@ -77,7 +77,7 @@ function ProductsCatalogContent() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
           {/* Filters Sidebar */}
-          <div className={`${mobileFiltersOpen ? "block" : "hidden lg:block"} bg-white rounded-2xl p-6 border border-brand-beige-dark shadow-sm h-fit space-y-6`}>
+          <div className={`${mobileFiltersOpen ? "block" : "hidden lg:block"} bg-white rounded-3xl p-6 border border-brand-beige-dark/60 shadow-sm h-fit space-y-6`}>
             <h2 className="text-base font-bold text-brand-charcoal border-b border-brand-beige-dark pb-3">ফিল্টার অপশন</h2>
             
             {/* Category Filter */}
@@ -86,7 +86,7 @@ function ProductsCatalogContent() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-brand-beige border border-brand-beige-dark text-sm rounded-lg p-2.5 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest"
+                className="w-full bg-brand-beige/50 border border-brand-beige-dark/80 text-sm rounded-xl py-3 px-4 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-all"
               >
                 <option value="">সকল ক্যাটাগরি</option>
                 <option value="cats">বিড়াল (Cats)</option>
@@ -101,7 +101,7 @@ function ProductsCatalogContent() {
               <select
                 value={selectedBrand}
                 onChange={(e) => setSelectedBrand(e.target.value)}
-                className="w-full bg-brand-beige border border-brand-beige-dark text-sm rounded-lg p-2.5 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest"
+                className="w-full bg-brand-beige/50 border border-brand-beige-dark/80 text-sm rounded-xl py-3 px-4 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-all"
               >
                 <option value="">সকল ব্র্যান্ড</option>
                 <option value="Pawsome">Pawsome</option>
@@ -139,7 +139,7 @@ function ProductsCatalogContent() {
                 setMaxPrice(3000);
                 setSearchVal("");
               }}
-              className="w-full bg-brand-beige hover:bg-brand-beige-dark text-brand-charcoal py-2.5 rounded-xl text-xs font-semibold transition-colors border border-brand-beige-dark"
+              className="w-full bg-brand-beige hover:bg-brand-beige-dark text-brand-charcoal py-3 rounded-xl text-xs font-semibold transition-colors border border-brand-beige-dark/80 cursor-pointer"
             >
               সব ফিল্টার মুছুন
             </button>
@@ -156,9 +156,9 @@ function ProductsCatalogContent() {
                   return (
                     <div
                       key={product.id}
-                      className="bg-white rounded-2xl border border-brand-beige-dark p-5 flex flex-col justify-between hover:shadow-md transition-shadow"
+                      className="bg-white rounded-3xl border border-brand-beige-dark/45 p-6 flex flex-col justify-between hover:shadow-[0_8px_30px_rgba(45,90,39,0.06)] hover:-translate-y-1 hover:border-brand-forest/15 transition-all duration-300"
                     >
-                      <div className="space-y-3.5">
+                      <div className="space-y-4">
                         {/* Tags */}
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] bg-brand-forest/5 text-brand-forest px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider border border-brand-forest/10">
@@ -168,7 +168,7 @@ function ProductsCatalogContent() {
                         </div>
 
                         {/* Visual Product Image with Fallback */}
-                        <div className="h-44 bg-brand-beige rounded-xl overflow-hidden border border-brand-beige-dark flex items-center justify-center relative">
+                        <div className="h-44 bg-brand-beige rounded-2xl overflow-hidden border border-brand-beige-dark/50 flex items-center justify-center relative">
                           {product.id === "1" ? (
                             <img src="/collar.png" alt={product.name} className="w-full h-full object-cover" />
                           ) : product.id === "cat_litter_premium" ? (
@@ -176,7 +176,30 @@ function ProductsCatalogContent() {
                           ) : product.id === "leather_dog_leash" ? (
                             <img src="/leash.png" alt={product.name} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-5xl">{category === "cats" ? "🐱" : category === "dogs" ? "🐶" : "🦜"}</span>
+                            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border border-brand-beige-dark/30 shadow-inner">
+                              {category === "cats" ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-brand-forest/60">
+                                  <path d="M12 21c-4.418 0-8-3.582-8-8 0-3.55 2.317-6.56 5.5-7.58L6 2l4 3.5C10.63 5.17 11.3 5 12 5s1.37.17 2 .5L18 2l-3.5 3.42c3.183 1.02 5.5 4.03 5.5 7.58 0 4.418-3.582 8-8 8z" />
+                                  <circle cx="9" cy="12" r="1" fill="currentColor" />
+                                  <circle cx="15" cy="12" r="1" fill="currentColor" />
+                                  <path d="M12 14.5l-1-1h2z" fill="currentColor" />
+                                </svg>
+                              ) : category === "dogs" ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-brand-forest/60">
+                                  <path d="M6 5c0-1.657 1-3 3-3h6c2 0 3 1.343 3 3v4.586c0 .53-.21 1.04-.586 1.414L15 13.414V17a3 3 0 01-6 0v-3.586L6.586 11c-.375-.374-.586-.884-.586-1.414V5z" />
+                                  <path d="M6 5.5C4 5.5 3 7 3 9.5c0 3 2 4.5 3 2.5V5.5z" />
+                                  <path d="M18 5.5c2 0 3 1.5 3 4c0 3-2 4.5-3 2.5V5.5z" />
+                                  <circle cx="9.5" cy="9.5" r="1" fill="currentColor" />
+                                  <circle cx="14.5" cy="9.5" r="1" fill="currentColor" />
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-brand-forest/60">
+                                  <path d="M15.5 8.5c0-2.5-2-4.5-4.5-4.5S6.5 6 6.5 8.5c0 1.5.5 2.5 1.5 3.5L7 19.5c0 1 1 1.5 2 1l2.5-3 2.5 3c1 .5 2 0 2-1l-1-7.5c1-1 1.5-2 1.5-3.5z" />
+                                  <path d="M6.5 7.5L3 9l3.5 1.5Z" fill="currentColor" />
+                                  <circle cx="9.5" cy="7.5" r="1" fill="currentColor" />
+                                </svg>
+                              )}
+                            </div>
                           )}
                         </div>
 
@@ -185,13 +208,13 @@ function ProductsCatalogContent() {
                         </h3>
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-brand-beige-dark flex items-center justify-between">
+                      <div className="mt-4 pt-4 border-t border-brand-beige-dark/50 flex items-center justify-between">
                         <span className="text-base font-bold text-brand-forest">
                           ৳{product.price.toLocaleString("bn-BD")}
                         </span>
                         <button
                           onClick={() => addToCart(product)}
-                          className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-4 py-2 rounded-full text-xs font-semibold transition-colors focus:outline-none"
+                          className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-4 py-2.5 rounded-full text-xs font-semibold transition-colors focus:outline-none cursor-pointer"
                         >
                           কার্টে যোগ করুন
                         </button>
