@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ShopProvider } from "@/context/ShopContext";
+import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 
 const geistSans = Geist({
@@ -34,10 +35,12 @@ export default function RootLayout({
         className="min-h-full flex flex-col bg-brand-beige text-brand-charcoal"
         suppressHydrationWarning={true}
       >
-        <ShopProvider>
-          <Navbar />
-          <main className="flex-1 flex flex-col">{children}</main>
-        </ShopProvider>
+        <AuthProvider>
+          <ShopProvider>
+            <Navbar />
+            <main className="flex-1 flex flex-col">{children}</main>
+          </ShopProvider>
+        </AuthProvider>
       </body>
     </html>
   );

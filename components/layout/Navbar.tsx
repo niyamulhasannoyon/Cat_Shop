@@ -3,12 +3,16 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShop } from "@/context/ShopContext";
+import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
 export default function Navbar() {
   const router = useRouter();
   const { cartCount, cartTotal } = useShop();
+  const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState<boolean>(false);
   const FREE_SHIPPING_THRESHOLD = 3000;
   const remainsForFreeShipping = FREE_SHIPPING_THRESHOLD - cartTotal;
 
@@ -110,6 +114,73 @@ export default function Navbar() {
                 )}
               </a>
 
+              {/* Authentication Actions */}
+              <div className="relative flex items-center">
+                {user ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                      className="flex items-center gap-2 focus:outline-none cursor-pointer"
+                    >
+                      {user.photoURL ? (
+                        <img
+                          src={user.photoURL}
+                          alt={user.displayName || "User"}
+                          className="h-9 w-9 rounded-full object-cover ring-2 ring-brand-forest/20 hover:ring-brand-forest transition-all"
+                        />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full bg-brand-forest text-brand-beige flex items-center justify-center font-bold text-sm shadow-inner uppercase">
+                          {user.displayName ? user.displayName.substring(0, 1) : (user.email ? user.email.substring(0, 1) : "U")}
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Profile Dropdown */}
+                    {profileDropdownOpen && (
+                      <div 
+                        className="absolute right-0 mt-3.5 w-60 rounded-2xl bg-white border border-brand-beige-dark shadow-xl py-3 z-50 animate-in fade-in slide-in-from-top-3 duration-200"
+                        onMouseLeave={() => setProfileDropdownOpen(false)}
+                      >
+                        <div className="px-4 py-2 border-b border-brand-beige-dark mb-2">
+                          <p className="text-sm font-bold text-brand-charcoal truncate">
+                            {user.displayName || "ক্রেতা"}
+                          </p>
+                          <p className="text-xs text-stone-500 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                        
+                        <Link
+                          href="/tracking"
+                          className="block px-4 py-2 text-xs font-semibold text-brand-charcoal hover:bg-stone-50 hover:text-brand-forest transition-colors"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          আমার অর্ডারসমূহ
+                        </Link>
+
+                        <button
+                          onClick={async () => {
+                            setProfileDropdownOpen(false);
+                            await logout();
+                            router.push("/");
+                          }}
+                          className="w-full text-left block px-4 py-2 text-xs font-bold text-red-655 hover:bg-red-50 transition-colors cursor-pointer"
+                        >
+                          লগ আউট (Sign Out)
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="hidden md:flex items-center justify-center border border-brand-forest text-brand-forest hover:bg-brand-forest hover:text-brand-beige py-2 px-4.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all shadow-sm"
+                  >
+                    লগইন
+                  </Link>
+                )}
+              </div>
+
               {/* Hamburger Button (Mobile Menu Trigger) */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -163,6 +234,51 @@ export default function Navbar() {
                 অর্ডার ট্র্যাকিং
               </a>
             </nav>
+
+            {/* Mobile Auth Options */}
+            <div className="pt-4 border-t border-brand-beige-dark/50">
+              {user ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 py-1">
+                    {user.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt={user.displayName || "User"}
+                        className="h-9 w-9 rounded-full object-cover ring-2 ring-brand-forest/20"
+                      />
+                    ) : (
+                      <div className="h-9 w-9 rounded-full bg-brand-forest text-brand-beige flex items-center justify-center font-bold text-sm uppercase">
+                        {user.displayName ? user.displayName.substring(0, 1) : (user.email ? user.email.substring(0, 1) : "U")}
+                      </div>
+                    )}
+                    <div className="truncate">
+                      <p className="text-sm font-bold text-brand-charcoal truncate">
+                        {user.displayName || "ক্রেতা"}
+                      </p>
+                      <p className="text-xs text-stone-500 truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setMobileMenuOpen(false);
+                      await logout();
+                      router.push("/");
+                    }}
+                    className="w-full text-center py-2.5 rounded-xl border border-red-200 text-xs font-bold text-red-655 hover:bg-red-50 active:bg-red-100 transition-all cursor-pointer"
+                  >
+                    লগ আউট (Sign Out)
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-center bg-brand-forest hover:bg-brand-forest-light text-brand-beige py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all"
+                >
+                  লগইন করুন
+                </Link>
+              )}
+            </div>
           </div>
         )}
 
