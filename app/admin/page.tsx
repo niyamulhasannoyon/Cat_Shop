@@ -1,17 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { useShop } from "@/context/ShopContext";
 import { Product, Order } from "@/types";
 
-type TabType = "dashboard" | "products" | "orders" | "bundles";
+type TabType = "dashboard" | "products" | "orders" | "bundles" | "audit_logs";
 
 export default function AdminDashboard() {
-  const { products, orders, addProduct, deleteProduct, updateOrderStatus } = useShop();
+  const { 
+    products, 
+    orders, 
+    addProduct, 
+    deleteProduct, 
+    updateOrderStatus,
+    stockLogs,
+    updateStock,
+    bulkUpdateStock
+  } = useShop();
   
   // Navigation Tabs state
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
 
+  // Stock inventory states
+  const [restockInputs, setRestockInputs] = useState<{ [key: string]: string }>({});
+  
   // Add Product Form states
   const [newProdName, setNewProdName] = useState("");
   const [newProdPrice, setNewProdPrice] = useState("");
@@ -19,8 +32,26 @@ export default function AdminDashboard() {
   const [newProdBrand, setNewProdBrand] = useState("Pawsome");
   const [newProdDesc, setNewProdDesc] = useState("");
   const [newProdImage, setNewProdImage] = useState("");
+  
+  // Inventory form states
+  const [newProdStock, setNewProdStock] = useState("10");
+  const [newProdThreshold, setNewProdThreshold] = useState("5");
+  const [variantInputs, setVariantInputs] = useState<Array<{ size: string; color: string; stock: number }>>([]);
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab") as TabType;
+      if (tab && ["dashboard", "products", "orders", "bundles", "audit_logs"].includes(tab)) {
+        setActiveTab(tab);
+      }
+    }
+  }, []);
+
+
 
   // Business Analytics Calculations
   const totalOrders = orders.length;
@@ -53,6 +84,11 @@ export default function AdminDashboard() {
       brand: newProdBrand,
       description: newProdDesc.trim(),
       imageUrl: newProdImage.trim() || undefined,
+      stock: Number(newProdStock),
+      lowStockThreshold: Number(newProdThreshold),
+      variants: variantInputs.length > 0
+        ? variantInputs.map((v, idx) => ({ id: `var-${Date.now()}-${idx}`, ...v }))
+        : undefined
     });
 
     // Reset Form
@@ -62,9 +98,65 @@ export default function AdminDashboard() {
     setNewProdBrand("Pawsome");
     setNewProdDesc("");
     setNewProdImage("");
+    setNewProdStock("10");
+    setNewProdThreshold("5");
+    setVariantInputs([]);
     setShowAddForm(false);
     alert("🎉 নতুন পণ্য সফলভাবে যুক্ত করা হয়েছে!");
   };
+
+  // CSV Bulk Upload Handler
+  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const res = bulkUpdateStock(text);
+      alert(res.message);
+    };
+    reader.readAsText(file);
+  };
+
+  const lowStockItems = useMemo(() => {
+    const list: Array<{
+      productId: string;
+      productName: string;
+      variantId?: string;
+      variantDetails?: string;
+      stock: number;
+      threshold: number;
+    }> = [];
+
+    products.forEach((prod) => {
+      const threshold = prod.lowStockThreshold || 5;
+      if (prod.variants && prod.variants.length > 0) {
+        prod.variants.forEach((v) => {
+          if (v.stock <= threshold) {
+            list.push({
+              productId: prod.id,
+              productName: prod.name,
+              variantId: v.id,
+              variantDetails: `Size: ${v.size || ""}, Color: ${v.color || ""}`,
+              stock: v.stock,
+              threshold,
+            });
+          }
+        });
+      } else {
+        if (prod.stock <= threshold) {
+          list.push({
+            productId: prod.id,
+            productName: prod.name,
+            stock: prod.stock,
+            threshold,
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [products]);
 
   return (
     <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
@@ -101,6 +193,7 @@ export default function AdminDashboard() {
               { id: "products", label: "📦 পণ্য CRUD", desc: "পণ্য তালিকা ও সংযোজন" },
               { id: "orders", label: "📋 অর্ডার ম্যানেজার", desc: "গ্রাহক অর্ডার ও স্ট্যাটাস" },
               { id: "bundles", label: "🏷️ বান্ডেল অফার", desc: "সক্রিয় কম্বো সমূহ" },
+              { id: "audit_logs", label: "🪵 স্টক লগস", desc: "স্টক অডিট হিস্ট্রি" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -114,6 +207,18 @@ export default function AdminDashboard() {
                 {tab.label}
               </button>
             ))}
+            <Link
+              href="/admin/customers"
+              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
+            >
+              👥 গ্রাহক তালিকা
+            </Link>
+            <Link
+              href="/admin/coupons"
+              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
+            >
+              🏷️ কুপন ও প্রোমো
+            </Link>
           </nav>
         </div>
       </section>
@@ -294,6 +399,83 @@ export default function AdminDashboard() {
 
             </div>
 
+            {/* Low Stock Alert Widget */}
+            <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm space-y-4">
+              <div className="border-b border-brand-beige-dark pb-3 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-red-650 flex items-center gap-1.5">
+                  ⚠️ স্টক সতর্কতা (Low Stock Alerts)
+                </h3>
+                <span className="bg-red-50 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                  {lowStockItems.length}টি পণ্য রি-স্টক করা প্রয়োজন
+                </span>
+              </div>
+              
+              {lowStockItems.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-brand-beige-dark text-xs">
+                    <thead>
+                      <tr className="text-left text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
+                        <th className="py-2 px-3">পণ্য</th>
+                        <th className="py-2 px-3">ভ্যারিয়েন্ট</th>
+                        <th className="py-2 px-3 text-center">বর্তমান স্টক</th>
+                        <th className="py-2 px-3 text-center">কম স্টক এলার্ট লিমিট</th>
+                        <th className="py-2 px-3 text-center">রি-স্টক পরিমাণ</th>
+                        <th className="py-2 px-3 text-right">অ্যাকশন</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-brand-beige-dark text-brand-charcoal">
+                      {lowStockItems.map((item) => {
+                        const inputKey = `${item.productId}-${item.variantId || "general"}`;
+                        return (
+                          <tr key={inputKey} className="hover:bg-red-50/10">
+                            <td className="py-3 px-3 font-semibold">{item.productName}</td>
+                            <td className="py-3 px-3 text-stone-500">{item.variantDetails || "—"}</td>
+                            <td className="py-3 px-3 text-center font-bold text-red-600">{item.stock} টি</td>
+                            <td className="py-3 px-3 text-center text-stone-400 font-light">{item.threshold} টি</td>
+                            <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="number"
+                                placeholder="যেমন: ১০"
+                                value={restockInputs[inputKey] || ""}
+                                onChange={(e) =>
+                                  setRestockInputs((prev) => ({
+                                    ...prev,
+                                    [inputKey]: e.target.value,
+                                  }))
+                                }
+                                className="w-20 text-center bg-brand-beige border border-brand-beige-dark text-xs rounded-lg p-1 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest"
+                              />
+                            </td>
+                            <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => {
+                                  const qty = parseInt(restockInputs[inputKey], 10);
+                                  if (isNaN(qty) || qty <= 0) {
+                                    alert("দয়া করে সঠিক রি-স্টক পরিমাণ লিখুন।");
+                                    return;
+                                  }
+                                  updateStock(item.productId, item.variantId || null, item.stock + qty, "restock", "admin");
+                                  setRestockInputs((prev) => ({ ...prev, [inputKey]: "" }));
+                                  alert(`🎉 স্টক সফলভাবে আপডেট করা হয়েছে!`);
+                                }}
+                                className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer"
+                              >
+                                স্টক যোগ করুন
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-6 text-center text-stone-400 text-xs">
+                  ✓ সকল পণ্য পর্যাপ্ত পরিমাণে স্টকে রয়েছে!
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 
@@ -306,12 +488,30 @@ export default function AdminDashboard() {
                 <h3 className="text-base font-bold text-brand-charcoal">পণ্য তালিকা পরিচালনা</h3>
                 <p className="text-xs text-stone-500 font-light mt-0.5">স্টোরে প্রোডাক্ট সংযোজন এবং অপসারণ করুন</p>
               </div>
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-5 py-2.5 rounded-full text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                {showAddForm ? "ফর্ম বন্ধ করুন" : "নতুন পণ্য যোগ করুন +"}
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Bulk CSV upload */}
+                <div>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCSVUpload}
+                    className="hidden"
+                    id="bulk-csv-upload"
+                  />
+                  <label
+                    htmlFor="bulk-csv-upload"
+                    className="bg-white border border-brand-beige-dark hover:bg-brand-beige text-brand-charcoal px-4 py-2.5 rounded-full text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    📥 বাল্ক আপডেট (CSV)
+                  </label>
+                </div>
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-5 py-2.5 rounded-full text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  {showAddForm ? "ফর্ম বন্ধ করুন" : "নতুন পণ্য যোগ করুন +"}
+                </button>
+              </div>
             </div>
 
             {/* Add Product Modal Form */}
@@ -389,9 +589,95 @@ export default function AdminDashboard() {
                         type="text"
                         value={newProdImage}
                         onChange={(e) => setNewProdImage(e.target.value)}
-                        placeholder="যেমন: litter.png অথবা খালি রাখুন"
+                        placeholder="যেমন: litter.png अथवा খালি রাখুন"
                         className="w-full bg-brand-beige border border-brand-beige-dark text-xs rounded-lg p-2.5 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-colors"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 sm:col-span-2">
+                      <div className="space-y-1">
+                        <label htmlFor="prod-stock" className="text-[11px] font-bold text-stone-500">স্টক পরিমাণ (Stock) <span className="text-red-500">*</span></label>
+                        <input
+                          id="prod-stock"
+                          type="number"
+                          required
+                          value={newProdStock}
+                          onChange={(e) => setNewProdStock(e.target.value)}
+                          placeholder="যেমন: ১০"
+                          className="w-full bg-brand-beige border border-brand-beige-dark text-xs rounded-lg p-2.5 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-colors"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label htmlFor="prod-threshold" className="text-[11px] font-bold text-stone-500">কম স্টক সতর্কীকরণ লিমিট <span className="text-red-500">*</span></label>
+                        <input
+                          id="prod-threshold"
+                          type="number"
+                          required
+                          value={newProdThreshold}
+                          onChange={(e) => setNewProdThreshold(e.target.value)}
+                          placeholder="যেমন: ৫"
+                          className="w-full bg-brand-beige border border-brand-beige-dark text-xs rounded-lg p-2.5 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Variant additions section */}
+                    <div className="sm:col-span-2 space-y-2 border border-dashed border-brand-beige-dark p-4 rounded-xl bg-brand-beige/25">
+                      <div className="flex justify-between items-center pb-2 border-b border-brand-beige-dark">
+                        <span className="text-[11px] font-bold text-brand-charcoal">পণ্যের ভ্যারিয়েন্ট সমূহ (ঐচ্ছিক)</span>
+                        <button
+                          type="button"
+                          onClick={() => setVariantInputs((prev) => [...prev, { size: "", color: "", stock: 0 }])}
+                          className="text-[10px] font-bold text-brand-forest hover:underline cursor-pointer"
+                        >
+                          + ভ্যারিয়েন্ট যোগ করুন
+                        </button>
+                      </div>
+                      
+                      {variantInputs.map((vInput, idx) => (
+                        <div key={idx} className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-center">
+                          <input
+                            type="text"
+                            placeholder="সাইজ (M, L)"
+                            value={vInput.size}
+                            onChange={(e) => {
+                              const updated = [...variantInputs];
+                              updated[idx].size = e.target.value;
+                              setVariantInputs(updated);
+                            }}
+                            className="bg-white border border-brand-beige-dark text-[11px] rounded-lg p-1.5 text-brand-charcoal focus:outline-none"
+                          />
+                          <input
+                            type="text"
+                            placeholder="রঙ (Red, Green)"
+                            value={vInput.color}
+                            onChange={(e) => {
+                              const updated = [...variantInputs];
+                              updated[idx].color = e.target.value;
+                              setVariantInputs(updated);
+                            }}
+                            className="bg-white border border-brand-beige-dark text-[11px] rounded-lg p-1.5 text-brand-charcoal focus:outline-none"
+                          />
+                          <input
+                            type="number"
+                            placeholder="স্টক"
+                            value={vInput.stock || ""}
+                            onChange={(e) => {
+                              const updated = [...variantInputs];
+                              updated[idx].stock = Number(e.target.value);
+                              setVariantInputs(updated);
+                            }}
+                            className="bg-white border border-brand-beige-dark text-[11px] rounded-lg p-1.5 text-brand-charcoal focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setVariantInputs((prev) => prev.filter((_, i) => i !== idx))}
+                            className="text-[10px] text-red-650 hover:underline cursor-pointer col-span-3 sm:col-span-1 text-right sm:text-center text-red-600"
+                          >
+                            মুছুন ✕
+                          </button>
+                        </div>
+                      ))}
                     </div>
 
                     <div className="space-y-1 sm:col-span-2">
@@ -437,6 +723,7 @@ export default function AdminDashboard() {
                       <th className="py-3 px-3 sm:py-4 sm:px-6">আইডি</th>
                       <th className="py-3 px-3 sm:py-4 sm:px-6">ক্যাটাগরি</th>
                       <th className="py-3 px-3 sm:py-4 sm:px-6">ব্র্যান্ড</th>
+                      <th className="py-3 px-3 sm:py-4 sm:px-6 text-center">স্টক পরিমাণ</th>
                       <th className="py-3 px-3 sm:py-4 sm:px-6">মূল্য</th>
                       <th className="py-3 px-3 sm:py-4 sm:px-6 text-right">অ্যাকশন</th>
                     </tr>
@@ -447,7 +734,18 @@ export default function AdminDashboard() {
                       const brand = product.brand || "Pawsome";
                       return (
                         <tr key={product.id} className="hover:bg-brand-beige/20 text-brand-charcoal">
-                          <td className="py-3 px-3 sm:py-4 sm:px-6 font-semibold">{product.name}</td>
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 space-y-1.5">
+                            <span className="font-semibold">{product.name}</span>
+                            {product.variants && product.variants.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 text-[9px] text-stone-500 font-medium mt-1">
+                                {product.variants.map((v) => (
+                                  <span key={v.id} className="px-1.5 py-0.5 bg-stone-100 border border-stone-200 rounded">
+                                    {v.size ? `Size: ${v.size}` : ""} {v.color ? `Color: ${v.color}` : ""} ({v.stock}টি)
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
                           <td className="py-3 px-3 sm:py-4 sm:px-6 font-mono text-stone-400">{product.id}</td>
                           <td className="py-3 px-3 sm:py-4 sm:px-6">
                             <span className="px-2.5 py-0.5 rounded-full bg-brand-forest/5 text-brand-forest border border-brand-forest/10 font-medium">
@@ -455,6 +753,21 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td className="py-3 px-3 sm:py-4 sm:px-6 text-stone-500 font-medium">{brand}</td>
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 text-center">
+                            {product.stock <= 0 ? (
+                              <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 font-bold border border-red-200 uppercase tracking-wider text-[10px]">
+                                স্টক আউট
+                              </span>
+                            ) : product.stock <= (product.lowStockThreshold || 5) ? (
+                              <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-bold border border-amber-250 text-[10px] animate-pulse">
+                                {product.stock} টি বাকি ⚠️
+                              </span>
+                            ) : (
+                              <span className="font-semibold text-brand-charcoal">
+                                {product.stock} টি
+                              </span>
+                            )}
+                          </td>
                           <td className="py-3 px-3 sm:py-4 sm:px-6 font-bold text-brand-forest">৳{product.price.toLocaleString("bn-BD")}</td>
                           <td className="py-3 px-3 sm:py-4 sm:px-6 text-right">
                             <button
@@ -547,6 +860,8 @@ export default function AdminDashboard() {
                                   ? "bg-emerald-50 border-emerald-200 text-emerald-700"
                                   : order.status === "Processing"
                                   ? "bg-amber-50 border-amber-200 text-amber-700"
+                                  : order.status === "Cancelled"
+                                  ? "bg-red-50 border-red-200 text-red-700"
                                   : "bg-stone-50 border-stone-200 text-stone-600"
                               }`}
                             >
@@ -554,6 +869,7 @@ export default function AdminDashboard() {
                               <option value="Processing">Processing</option>
                               <option value="Shipped">Shipped</option>
                               <option value="Delivered">Delivered</option>
+                              <option value="Cancelled">Cancelled</option>
                             </select>
                           </td>
                         </tr>
@@ -670,6 +986,80 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 5: AUDIT LOGS */}
+        {activeTab === "audit_logs" && (
+          <div className="space-y-6 animate-fadeIn">
+            
+            <div className="border-b border-brand-beige-dark pb-4">
+              <h3 className="text-base font-bold text-brand-charcoal">স্টক অডিট লগ হিস্ট্রি (Stock History Logs)</h3>
+              <p className="text-xs text-stone-500 font-light mt-0.5">স্টোরে পণ্য ইনভেন্টরির পরিবর্তন ও স্টক হিস্ট্রি ট্র্যাক করুন</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-brand-beige-dark shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-brand-beige-dark text-xs">
+                  <thead className="bg-brand-beige">
+                    <tr className="text-left text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
+                      <th className="py-3 px-4">তারিখ ও সময়</th>
+                      <th className="py-3 px-4">পণ্যের বিবরণ</th>
+                      <th className="py-3 px-4">ভ্যারিয়েন্ট</th>
+                      <th className="py-3 px-4 text-center">পরিবর্তন</th>
+                      <th className="py-3 px-4">অ্যাকশন টাইপ</th>
+                      <th className="py-3 px-4">সম্পাদনকারী</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-brand-beige-dark bg-white">
+                    {stockLogs && stockLogs.length > 0 ? (
+                      stockLogs.map((log) => {
+                        const isPositive = log.quantityChanged > 0;
+                        return (
+                          <tr key={log.id} className="hover:bg-brand-beige/25">
+                            <td className="py-3 px-4 text-stone-400">
+                              {new Date(log.createdAt).toLocaleString("bn-BD")}
+                            </td>
+                            <td className="py-3 px-4 font-semibold text-brand-charcoal">{log.productName}</td>
+                            <td className="py-3 px-4 text-stone-500">{log.variantDetails || "—"}</td>
+                            <td className="py-3 px-4 text-center font-bold">
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                                  isPositive 
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-100" 
+                                    : "bg-red-50 text-red-700 border border-red-100"
+                                }`}
+                              >
+                                {isPositive ? `+${log.quantityChanged}` : log.quantityChanged}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="font-semibold text-brand-charcoal uppercase tracking-wider text-[10px]">
+                                {log.actionType === "restock" 
+                                  ? "🟢 রি-স্টক (Restock)" 
+                                  : log.actionType === "purchase" 
+                                  ? "🔵 ক্রয় (Purchase)" 
+                                  : log.actionType === "cancel_return" 
+                                  ? "🟡 ফেরত (Cancel Return)" 
+                                  : "🟠 সমন্বয় (Adjust)"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-medium text-stone-600 font-mono text-[11px]">{log.updatedBy}</td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-stone-400">
+                          কোনো স্টক লগ হিস্ট্রি পাওয়া যায়নি।
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </div>

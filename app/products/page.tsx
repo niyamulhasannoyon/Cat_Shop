@@ -8,6 +8,9 @@ import { Product } from "@/types";
 function ProductsCatalogContent() {
   const searchParams = useSearchParams();
   const { addToCart, products } = useShop();
+  
+  // Track selected variants for each product
+  const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: string }>({});
 
   // Search parameters states
   const categoryParam = searchParams.get("cat") || "";
@@ -206,18 +209,76 @@ function ProductsCatalogContent() {
                         <h3 className="text-sm font-semibold text-brand-charcoal tracking-tight line-clamp-2 h-10 leading-snug">
                           {product.name}
                         </h3>
+
+                        {/* Inventory Badges */}
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {product.stock <= 0 ? (
+                            <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-md border border-red-200 font-bold">
+                              🚫 স্টক নেই (Out of Stock)
+                            </span>
+                          ) : product.stock <= (product.lowStockThreshold || 5) ? (
+                            <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 font-bold animate-pulse">
+                              ⚠️ স্টক সীমিত ({product.stock}টি বাকি)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-100 font-medium">
+                              ✓ স্টকে আছে ({product.stock}টি)
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Variant Dropdown if variants exist */}
+                        {product.variants && product.variants.length > 0 && (
+                          <div className="mt-3 space-y-1">
+                            <label htmlFor={`var-select-${product.id}`} className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">ভ্যারিয়েন্ট নির্বাচন করুন:</label>
+                            <select
+                              id={`var-select-${product.id}`}
+                              value={selectedVariants[product.id] || product.variants[0]?.id || ""}
+                              onChange={(e) =>
+                                setSelectedVariants((prev) => ({
+                                  ...prev,
+                                  [product.id]: e.target.value,
+                                }))
+                              }
+                              className="w-full bg-brand-beige border border-brand-beige-dark text-[11px] rounded-lg p-2 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-colors cursor-pointer"
+                            >
+                              {product.variants.map((v) => (
+                                <option key={v.id} value={v.id}>
+                                  {v.size ? `সাইজ: ${v.size}` : ""} {v.color ? `রঙ: ${v.color}` : ""} ({v.stock > 0 ? `${v.stock}টি স্টকে` : "স্টক নেই"})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-4 pt-4 border-t border-brand-beige-dark/50 flex items-center justify-between">
                         <span className="text-base font-bold text-brand-forest">
                           ৳{product.price.toLocaleString("bn-BD")}
                         </span>
-                        <button
-                          onClick={() => addToCart(product)}
-                          className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-4 py-2.5 rounded-full text-xs font-semibold transition-colors focus:outline-none cursor-pointer"
-                        >
-                          কার্টে যোগ করুন
-                        </button>
+                        {(() => {
+                          const chosenVariantId = selectedVariants[product.id] || (product.variants && product.variants[0]?.id) || undefined;
+                          let isOutOfStock = product.stock <= 0;
+                          
+                          if (chosenVariantId && product.variants) {
+                            const variant = product.variants.find(v => v.id === chosenVariantId);
+                            isOutOfStock = !variant || variant.stock <= 0;
+                          }
+
+                          return (
+                            <button
+                              onClick={() => addToCart(product, chosenVariantId)}
+                              disabled={isOutOfStock}
+                              className={`px-4 py-2.5 rounded-full text-xs font-semibold transition-colors focus:outline-none cursor-pointer ${
+                                isOutOfStock
+                                  ? "bg-stone-200 text-stone-400 border border-stone-300 cursor-not-allowed"
+                                  : "bg-brand-forest hover:bg-brand-forest-light text-brand-beige"
+                              }`}
+                            >
+                              {isOutOfStock ? "স্টক নেই" : "কার্টে যোগ করুন"}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   );

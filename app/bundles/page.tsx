@@ -27,8 +27,26 @@ const BUNDLE_DEALS: Bundle[] = [
     emoji: "🐱",
     description: "নতুন বিড়ালের জন্য প্রয়োজনীয় গ্রুমিং ও হাইজিন সামগ্রীর প্রিমিয়াম বান্ডেল অফার।",
     items: [
-      { id: "1", name: "Premium Velvet Cat Collar (Forest Green)", price: 1200 },
-      { id: "cat_litter_premium", name: "প্রিমিয়াম সিলিকা ক্যাট লিটার (৫ লিটার)", price: 850 },
+      { 
+        id: "1", 
+        name: "Premium Velvet Cat Collar (Forest Green)", 
+        price: 1200, 
+        category: "cats", 
+        brand: "Pawsome", 
+        description: "Premium velvet collar", 
+        stock: 15, 
+        lowStockThreshold: 5 
+      },
+      { 
+        id: "cat_litter_premium", 
+        name: "প্রিমিয়াম সিলিকা ক্যাট লিটার (৫ লিটার)", 
+        price: 850, 
+        category: "cats", 
+        brand: "Pawsome", 
+        description: "Premium silica cat litter", 
+        stock: 10, 
+        lowStockThreshold: 5 
+      },
     ],
   },
   {
@@ -41,8 +59,26 @@ const BUNDLE_DEALS: Bundle[] = [
     emoji: "🐶",
     description: "আপনার কুকুরের স্বাস্থ্যকর গ্রুমিং ও ডেন্টাল সুরক্ষার সেরা কম্বো প্যাক।",
     items: [
-      { id: "dog_shampoo", name: "অর্গানিক ডগ শ্যাম্পু ও কন্ডিশনার", price: 650 },
-      { id: "dog_chew_toy", name: "ডেন্টাল ডগ চিউ টয়", price: 400 },
+      { 
+        id: "dog_shampoo", 
+        name: "অর্গানিক ডগ শ্যাম্পু ও কন্ডিশনার", 
+        price: 650, 
+        category: "dogs", 
+        brand: "Pawsome", 
+        description: "Organic dog shampoo", 
+        stock: 12, 
+        lowStockThreshold: 5 
+      },
+      { 
+        id: "dog_chew_toy", 
+        name: "ডেন্টাল ডগ চিউ টয়", 
+        price: 400, 
+        category: "dogs", 
+        brand: "Pawsome", 
+        description: "Dental chew toy for dogs", 
+        stock: 20, 
+        lowStockThreshold: 5 
+      },
     ],
   },
 ];

@@ -6,18 +6,54 @@ import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const router = useRouter();
-  const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart, placeOrder, addToCart, products } = useShop();
+  const { 
+    cartItems, 
+    cartCount, 
+    cartTotal, 
+    updateQuantity, 
+    removeFromCart, 
+    clearCart, 
+    placeOrder, 
+    addToCart, 
+    products,
+    appliedCoupon,
+    couponDiscount,
+    applyCoupon,
+    removeCoupon
+  } = useShop();
 
   // Delivery configuration
   const FREE_SHIPPING_THRESHOLD = 3000;
   const [deliveryArea, setDeliveryArea] = useState<"inside" | "outside">("inside");
   const shippingFee = cartTotal >= FREE_SHIPPING_THRESHOLD ? 0 : deliveryArea === "inside" ? 60 : 120;
   const remainsForFreeShipping = FREE_SHIPPING_THRESHOLD - cartTotal;
-  const grandTotal = cartTotal + shippingFee;
+  const grandTotal = Math.max(0, cartTotal + shippingFee - couponDiscount);
 
   // Checkout form states
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
+  
+  // Coupon input and validation states
+  const [couponInput, setCouponInput] = useState<string>("");
+  const [couponError, setCouponError] = useState<string>("");
+
+  const handleApplyCoupon = () => {
+    setCouponError("");
+    if (!couponInput.trim()) {
+      setCouponError("দয়া করে কুপন কোড লিখুন।");
+      return;
+    }
+    if (!phone.trim()) {
+      setCouponError("কুপন যাচাইয়ের জন্য মোবাইল নম্বর প্রবেশ করা আবশ্যক।");
+      return;
+    }
+    const res = applyCoupon(couponInput.trim(), phone.trim());
+    if (!res.success) {
+      setCouponError(res.message);
+    } else {
+      setCouponInput("");
+    }
+  };
   const [address, setAddress] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "mfs">("cod");
 
@@ -30,6 +66,28 @@ export default function CartPage() {
     if (!name.trim() || !phone.trim() || !address.trim()) {
       alert("অনুগ্রহ করে সব তথ্য সঠিক উপায়ে পূরণ করুন।");
       return;
+    }
+
+    // Verify stock availability before placing order
+    for (const item of cartItems) {
+      const liveProduct = products.find(p => p.id === item.id);
+      if (!liveProduct) continue;
+      
+      let stockLimit = liveProduct.stock;
+      if (item.selectedVariantId && liveProduct.variants) {
+        const variant = liveProduct.variants.find(v => v.id === item.selectedVariantId);
+        if (variant) stockLimit = variant.stock;
+      }
+      
+      if (stockLimit <= 0) {
+        alert(`⚠️ দুঃখিত, "${item.name}" স্টক আউট হয়ে গেছে! অনুগ্রহ করে কার্ট থেকে সরিয়ে দিন।`);
+        return;
+      }
+      
+      if (item.quantity > stockLimit) {
+        alert(`⚠️ দুঃখিত, "${item.name}" পণ্যটির স্টক সীমিত! স্টকে মাত্র ${stockLimit}টি রয়েছে।`);
+        return;
+      }
     }
     
     // Call centralized placeOrder to sync with local storage & orders history
@@ -110,50 +168,87 @@ export default function CartPage() {
             
             {/* Cart Items List */}
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl border border-brand-beige-dark p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center justify-between shadow-sm"
-                >
-                  {/* Info details */}
-                  <div className="flex gap-3 sm:gap-4 items-center flex-1 min-w-0">
-                    <span className="text-2xl sm:text-3xl p-2 sm:p-2.5 bg-brand-beige rounded-xl border border-brand-beige-dark flex-shrink-0">📦</span>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-xs sm:text-sm font-semibold text-brand-charcoal truncate">{item.name}</h3>
-                      <p className="text-[11px] sm:text-xs text-brand-forest font-bold mt-1">৳{item.price.toLocaleString("bn-BD")}</p>
+              {cartItems.map((item) => {
+                const uniqueKey = item.selectedVariantId ? `${item.id}-${item.selectedVariantId}` : item.id;
+                return (
+                  <div
+                    key={uniqueKey}
+                    className="bg-white rounded-2xl border border-brand-beige-dark p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center justify-between shadow-sm"
+                  >
+                    {/* Info details */}
+                    <div className="flex gap-3 sm:gap-4 items-center flex-1 min-w-0">
+                      <span className="text-2xl sm:text-3xl p-2 sm:p-2.5 bg-brand-beige rounded-xl border border-brand-beige-dark flex-shrink-0">📦</span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs sm:text-sm font-semibold text-brand-charcoal truncate">{item.name}</h3>
+                        {(item.selectedSize || item.selectedColor) && (
+                          <p className="text-[10px] text-stone-500 font-bold mt-0.5">
+                            {item.selectedSize ? `সাইজ: ${item.selectedSize}` : ""} {item.selectedColor ? `রঙ: ${item.selectedColor}` : ""}
+                          </p>
+                        )}
+                        <p className="text-[11px] sm:text-xs text-brand-forest font-bold mt-1">৳{item.price.toLocaleString("bn-BD")}</p>
+                        
+                        {/* Live Stock Warning badging */}
+                        {(() => {
+                          let stockLimit = item.stock;
+                          const liveProduct = products.find(p => p.id === item.id);
+                          if (liveProduct) {
+                            if (item.selectedVariantId && liveProduct.variants) {
+                              const variant = liveProduct.variants.find(v => v.id === item.selectedVariantId);
+                              if (variant) stockLimit = variant.stock;
+                            } else {
+                              stockLimit = liveProduct.stock;
+                            }
+                          }
+
+                          if (stockLimit <= 0) {
+                            return (
+                              <p className="text-[10px] text-red-600 font-bold mt-1">
+                                🚫 স্টক নেই! (অর্ডার করা যাবে না)
+                              </p>
+                            );
+                          } else if (item.quantity > stockLimit) {
+                            return (
+                              <p className="text-[10px] text-amber-600 font-semibold mt-1 animate-pulse">
+                                ⚠️ স্টকে মাত্র {stockLimit}টি রয়েছে!
+                              </p>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Quantity Controller & Delete */}
+                    <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-brand-beige-dark pt-3 sm:pt-0 w-full sm:w-auto">
+                      <div className="flex items-center bg-brand-beige border border-brand-beige-dark rounded-full px-2 py-1">
+                        <button
+                          onClick={() => updateQuantity(item.id, -1, item.selectedVariantId)}
+                          className="text-stone-500 hover:text-brand-forest px-2.5 py-0.5 text-xs font-bold focus:outline-none cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="text-xs font-bold text-brand-charcoal min-w-[20px] text-center">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, 1, item.selectedVariantId)}
+                          className="text-stone-500 hover:text-brand-forest px-2.5 py-0.5 text-xs font-bold focus:outline-none cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => removeFromCart(item.id, item.selectedVariantId)}
+                        className="p-2 text-stone-400 hover:text-red-700 hover:bg-stone-55 rounded-full transition-colors focus:outline-none cursor-pointer"
+                        aria-label="Remove item"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-
-                  {/* Quantity Controller & Delete */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-brand-beige-dark pt-3 sm:pt-0 w-full sm:w-auto">
-                    <div className="flex items-center bg-brand-beige border border-brand-beige-dark rounded-full px-2 py-1">
-                      <button
-                        onClick={() => updateQuantity(item.id, -1)}
-                        className="text-stone-500 hover:text-brand-forest px-2.5 py-0.5 text-xs font-bold focus:outline-none"
-                      >
-                        -
-                      </button>
-                      <span className="text-xs font-bold text-brand-charcoal min-w-[20px] text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1)}
-                        className="text-stone-500 hover:text-brand-forest px-2.5 py-0.5 text-xs font-bold focus:outline-none"
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="p-2 text-stone-400 hover:text-red-700 hover:bg-stone-55 rounded-full transition-colors focus:outline-none"
-                      aria-label="Remove item"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Checkout Form & Order Summary */}
@@ -192,10 +287,55 @@ export default function CartPage() {
                     <span>ডেলিভারি চার্জ:</span>
                     <span>{shippingFee === 0 ? "ফ্রি" : `৳${shippingFee}`}</span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between items-center text-red-600 font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <span>কুপন ছাড় ({appliedCoupon?.code}):</span>
+                        <button
+                          type="button"
+                          onClick={removeCoupon}
+                          className="text-[10px] text-red-600 font-bold hover:underline cursor-pointer bg-red-50 px-1 py-0.5 rounded border border-red-200"
+                        >
+                          মুছুন
+                        </button>
+                      </div>
+                      <span>-৳{couponDiscount.toLocaleString("bn-BD")}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-bold text-sm text-brand-forest pt-1">
                     <span>সর্বমোট মূল্য:</span>
                     <span>৳{grandTotal.toLocaleString("bn-BD")}</span>
                   </div>
+                </div>
+
+                {/* Apply Coupon code section */}
+                <div className="space-y-2 border-b border-brand-beige-dark pb-4">
+                  <label className="text-[11px] font-semibold text-stone-500 block">প্রোমো কুপন কোড (Coupon Code):</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="যেমন: EID2026"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value);
+                        setCouponError("");
+                      }}
+                      className="flex-1 bg-brand-beige border border-brand-beige-dark text-xs rounded-lg p-2 text-brand-charcoal focus:outline-none uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      className="bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-beige px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                    >
+                      প্রয়োগ করুন
+                    </button>
+                  </div>
+                  {couponError && (
+                    <p className="text-[10px] text-red-600 font-bold tracking-tight">⚠️ {couponError}</p>
+                  )}
+                  {appliedCoupon && !couponError && (
+                    <p className="text-[10px] text-emerald-600 font-bold">✓ কুপন কোড "{appliedCoupon.code}" সফলভাবে যুক্ত হয়েছে!</p>
+                  )}
                 </div>
 
                 {/* Address Form */}
