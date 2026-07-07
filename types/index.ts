@@ -16,6 +16,7 @@ export interface Product {
   stock: number;
   lowStockThreshold?: number; // default: 5
   variants?: ProductVariant[];
+  costPrice?: number;
 }
 
 export interface CartItem extends Product {
@@ -136,6 +137,15 @@ export interface ShopContextType {
   initiateRefund: (orderId: string, amount: number, method: string, reason: string) => void;
   updateOrderPayment: (orderId: string, status: "Paid" | "Unpaid" | "Partial", transactionId?: string) => void;
   updateOrderCourier: (orderId: string, courier: "Pathao" | "RedX" | "Steadfast" | "Own delivery", trackingNumber: string) => void;
+  siteSettings: SiteSettings;
+  updateSiteSettings: (settings: SiteSettings) => void;
+  staffList: Staff[];
+  activeStaff: Staff | null;
+  staffLogs: StaffActivityLog[];
+  addStaff: (name: string, email: string, role: Staff["role"], password?: string) => void;
+  loginStaff: (email: string, password?: string) => boolean;
+  logoutStaff: () => void;
+  logActivity: (action: string) => void;
 }
 
 export interface Coupon {
@@ -197,4 +207,41 @@ export interface ShippingSettings {
   outsideDhakaCharge: number;
   subAreaCharge: number;
   freeShippingThreshold: number;
+}
+
+export interface SiteSettings {
+  heroBannerUrl: string;
+  heroBannerTitle: string;
+  heroBannerSubtitle: string;
+  contactPhone: string;
+  contactEmail: string;
+  contactAddress: string;
+  contactWhatsapp: string;
+  socialFacebook: string;
+  socialInstagram: string;
+  seoHomeTitle: string;
+  seoHomeDescription: string;
+  seoProductsTitle: string;
+  seoProductsDescription: string;
+  featuredProductIds: string[];
+  trendingProductIds: string[];
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  role: "Super Admin" | "Manager" | "Support";
+  createdAt: string;
+}
+
+export interface StaffActivityLog {
+  id: string;
+  staffId: string;
+  staffName: string;
+  staffEmail: string;
+  staffRole: string;
+  action: string;
+  createdAt: string;
 }

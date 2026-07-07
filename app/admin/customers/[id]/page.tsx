@@ -68,26 +68,19 @@ export default function CustomerDetailPage({ params }: PageProps) {
 
   return (
     <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
-      {/* Header */}
-      <header className="bg-brand-charcoal text-brand-beige py-6 px-4 sm:px-6 lg:px-8 border-b border-neutral-900 shadow-md">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⚙️</span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Paws&Co. এডমিন কন্ট্রোল প্যানেল</h1>
-            </div>
-            <p className="text-xs text-stone-400 font-light">গ্রাহক প্রোফাইল, অর্ডার হিস্ট্রি এবং অ্যাকাউন্ট সেটিংস</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/customers"
-              className="text-xs font-semibold bg-white/10 hover:bg-white/20 text-brand-beige px-4 py-2 rounded-full border border-stone-600 transition-colors"
-            >
-              ← গ্রাহক তালিকা
-            </Link>
-          </div>
+      
+      {/* Navigation Bar */}
+      <section className="bg-white border-b border-brand-beige-dark px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex gap-2 items-center">
+          <Link
+            href="/admin/customers"
+            className="px-4 py-2 text-xs font-bold rounded-lg border bg-brand-charcoal border-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 transition-colors"
+          >
+            ← গ্রাহক তালিকা
+          </Link>
+          <span className="text-xs font-bold text-stone-600">👤 গ্রাহক প্রোফাইল বিস্তারিত</span>
         </div>
-      </header>
+      </section>
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">

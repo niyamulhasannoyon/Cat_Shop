@@ -91,25 +91,241 @@ export default function AdminDashboard() {
 
 
 
-  // Business Analytics Calculations
-  const totalOrders = orders.length;
-  const totalSales = orders.reduce((sum, order) => sum + order.grandTotal, 0);
+  // Date range filter states
+  const [dateFilter, setDateFilter] = useState<"today" | "week" | "month" | "custom">("month");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; label: string; sales: number } | null>(null);
+
+  // Filter orders by date range dynamically
+  const filteredOrders = useMemo(() => {
+    const now = new Date();
+    return orders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      if (dateFilter === "today") {
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return orderDate >= todayStart;
+      }
+      if (dateFilter === "week") {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return orderDate >= weekAgo;
+      }
+      if (dateFilter === "month") {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return orderDate >= monthAgo;
+      }
+      if (dateFilter === "custom") {
+        if (customStartDate && customEndDate) {
+          const start = new Date(customStartDate);
+          const end = new Date(customEndDate);
+          end.setHours(23, 59, 59, 999);
+          return orderDate >= start && orderDate <= end;
+        }
+      }
+      return true;
+    });
+  }, [orders, dateFilter, customStartDate, customEndDate]);
+
+  // Business Analytics Calculations based on filteredOrders
+  const totalOrders = filteredOrders.length;
+  const totalSales = filteredOrders.reduce((sum, order) => sum + order.grandTotal, 0);
   const avgBasketSize = totalOrders > 0 ? Math.round(totalSales / totalOrders) : 0;
   
-  const totalItemsSold = orders.reduce(
+  const totalItemsSold = filteredOrders.reduce(
     (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
     0
   );
 
-  // New Metrics
+  // New Metrics from filtered list
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
-  const refundsThisMonth = refundLogs.filter(log => {
-    const d = new Date(log.createdAt);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  }).reduce((sum, log) => sum + log.refundAmount, 0);
+  
+  const refundsThisMonth = useMemo(() => {
+    return refundLogs.filter(log => {
+      const d = new Date(log.createdAt);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    }).reduce((sum, log) => sum + log.refundAmount, 0);
+  }, [refundLogs, currentMonth, currentYear]);
 
-  const pendingPayments = orders.filter(o => o.paymentStatus !== "Paid" && o.status !== "Cancelled").reduce((sum, o) => sum + o.grandTotal, 0);
+  const pendingPayments = useMemo(() => {
+    return filteredOrders.filter(o => o.paymentStatus !== "Paid" && o.status !== "Cancelled").reduce((sum, o) => sum + o.grandTotal, 0);
+  }, [filteredOrders]);
+
+  // wholesale cost, profit & margin calculation
+  const totalCost = useMemo(() => {
+    return filteredOrders.reduce((acc, order) => {
+      if (order.status === "Cancelled") return acc;
+      const orderItemCost = order.items.reduce((itemAcc, item) => {
+        const prod = products.find(p => p.id === item.id);
+        const wholesaleCost = prod?.costPrice || item.price * 0.6;
+        return itemAcc + (item.quantity * wholesaleCost);
+      }, 0);
+      return acc + orderItemCost;
+    }, 0);
+  }, [filteredOrders, products]);
+
+  const totalProfit = Math.max(0, totalSales - totalCost);
+  const profitMargin = totalSales > 0 ? Math.round((totalProfit / totalSales) * 100) : 0;
+
+  // Sales Trend line chart parsing
+  const salesChartData = useMemo(() => {
+    const now = new Date();
+    let daysToGenerate = 30;
+    if (dateFilter === "today") daysToGenerate = 1;
+    else if (dateFilter === "week") daysToGenerate = 7;
+    else if (dateFilter === "month") daysToGenerate = 30;
+    else if (dateFilter === "custom" && customStartDate && customEndDate) {
+      const start = new Date(customStartDate);
+      const end = new Date(customEndDate);
+      daysToGenerate = Math.max(1, Math.min(60, Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))));
+    }
+
+    const dataPoints: { label: string; sales: number }[] = [];
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    for (let i = daysToGenerate - 1; i >= 0; i--) {
+      let d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      if (dateFilter === "custom" && customEndDate) {
+        const end = new Date(customEndDate);
+        d = new Date(end.getTime() - i * 24 * 60 * 60 * 1000);
+      }
+      
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+      const daySales = filteredOrders
+        .filter(o => {
+          const od = new Date(o.createdAt);
+          return od >= dayStart && od <= dayEnd;
+        })
+        .reduce((sum, o) => sum + o.grandTotal, 0);
+
+      const label = d.toLocaleDateString("bn-BD", { day: "numeric", month: "short" });
+      dataPoints.push({ label, sales: daySales });
+    }
+    return dataPoints;
+  }, [filteredOrders, dateFilter, customStartDate, customEndDate]);
+
+  // Category Breakdown chart parsing
+  const categorySales = useMemo(() => {
+    const breakdown: { [key: string]: number } = { cats: 0, dogs: 0, birds: 0 };
+    filteredOrders.forEach(o => {
+      if (o.status === "Cancelled") return;
+      o.items.forEach(item => {
+        const prod = products.find(p => p.id === item.id);
+        const cat = prod?.category || "cats";
+        breakdown[cat] = (breakdown[cat] || 0) + (item.price * item.quantity);
+      });
+    });
+    return Object.entries(breakdown).map(([name, value]) => ({ name, value }));
+  }, [filteredOrders, products]);
+
+  const totalCatSales = useMemo(() => categorySales.reduce((acc, c) => acc + c.value, 0), [categorySales]);
+
+  const donutSlices = useMemo(() => {
+    let accumulatedPercent = 0;
+    return categorySales.map((c, idx) => {
+      const percent = totalCatSales > 0 ? c.value / totalCatSales : 0;
+      const strokeLength = percent * 251.2;
+      const strokeOffset = 251.2 - (accumulatedPercent * 251.2) + 62.8; 
+      accumulatedPercent += percent;
+      
+      const colors = ["#2D5A27", "#F59E0B", "#EF4444", "#3B82F6"]; 
+      return {
+        ...c,
+        color: colors[idx % colors.length],
+        strokeDash: `${strokeLength} 251.2`,
+        strokeOffset,
+        percent: Math.round(percent * 100)
+      };
+    });
+  }, [categorySales, totalCatSales]);
+
+  // Customer retention acquisition trend
+  const customerSplit = useMemo(() => {
+    let newCustomers = 0;
+    let returningCustomers = 0;
+    const seenPhonesInFiltered = new Set<string>();
+
+    filteredOrders.forEach(o => {
+      if (seenPhonesInFiltered.has(o.customerPhone)) {
+        returningCustomers++;
+        return;
+      }
+      seenPhonesInFiltered.add(o.customerPhone);
+      
+      const earliestFilteredDate = filteredOrders.length > 0 
+        ? Math.min(...filteredOrders.map(fo => new Date(fo.createdAt).getTime()))
+        : Date.now();
+      
+      const hasPriorOrder = orders.some(prior => {
+        return prior.customerPhone === o.customerPhone && new Date(prior.createdAt).getTime() < earliestFilteredDate;
+      });
+
+      if (hasPriorOrder) {
+        returningCustomers++;
+      } else {
+        newCustomers++;
+      }
+    });
+
+    const total = newCustomers + returningCustomers;
+    return {
+      newCount: newCustomers,
+      returningCount: returningCustomers,
+      newPercent: total > 0 ? Math.round((newCustomers / total) * 100) : 50,
+      returningPercent: total > 0 ? Math.round((returningCustomers / total) * 100) : 50
+    };
+  }, [filteredOrders, orders]);
+
+  // Top selling products list
+  const topProducts = useMemo(() => {
+    const productStats: { [key: string]: { id: string; name: string; quantity: number; revenue: number } } = {};
+    filteredOrders.forEach(o => {
+      if (o.status === "Cancelled") return;
+      o.items.forEach(item => {
+        if (!productStats[item.id]) {
+          productStats[item.id] = { id: item.id, name: item.name, quantity: 0, revenue: 0 };
+        }
+        productStats[item.id].quantity += item.quantity;
+        productStats[item.id].revenue += item.price * item.quantity;
+      });
+    });
+    
+    return Object.values(productStats)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5); 
+  }, [filteredOrders]);
+
+  const handleExportCSVReport = () => {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Paws&Co. Analytics Report\n";
+    csvContent += `Filter Range: ${dateFilter.toUpperCase()}\n`;
+    csvContent += `Generated At: ${new Date().toLocaleString()}\n\n`;
+    csvContent += "SUMMARY METRICS\n";
+    csvContent += `Total Sales,${totalSales}\n`;
+    csvContent += `Total Orders,${totalOrders}\n`;
+    csvContent += `Avg Basket Size,${avgBasketSize}\n`;
+    csvContent += `Total Items Sold,${totalItemsSold}\n`;
+    csvContent += `Pending Payments,${pendingPayments}\n`;
+    csvContent += `Total wholesale cost,${totalCost}\n`;
+    csvContent += `Total Net Profit,${totalProfit}\n`;
+    csvContent += `Net profit margin,${profitMargin}%\n\n`;
+    
+    csvContent += "TOP SELLING PRODUCTS\n";
+    csvContent += "Product Name,Quantity Sold,Revenue Generated\n";
+    topProducts.forEach(p => {
+      csvContent += `"${p.name.replace(/"/g, '""')}",${p.quantity},${p.revenue}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `paws_analytics_report_${dateFilter}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleAddProduct = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -209,33 +425,16 @@ export default function AdminDashboard() {
   return (
     <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
       
-      {/* Admin Panel Header Banner */}
-      <header className="bg-brand-charcoal text-brand-beige py-6 px-4 sm:px-6 lg:px-8 border-b border-neutral-900 shadow-md">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⚙️</span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Paws&Co. এডমিন কন্ট্রোল প্যানেল</h1>
-            </div>
-            <p className="text-xs text-stone-400 font-light">স্টোরের পণ্য, কাস্টমার অর্ডার এবং ড্যাশবোর্ড অ্যানালিটিক্স পরিচালনা করুন</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="/"
-              className="text-xs font-semibold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-brand-beige-dark px-4 py-2 rounded-full border border-stone-600 transition-colors"
-            >
-              লাইভ শপে যান ↗
-            </a>
-            <span className="h-2.5 w-2.5 bg-emerald-500 rounded-full animate-pulse" title="System Online" />
-            <span className="text-xs text-stone-400 font-medium">সিস্টেম অনলাইন</span>
-          </div>
-        </div>
-      </header>
-
       {/* Navigation tabs */}
       <section className="bg-white border-b border-brand-beige-dark py-1.5 shadow-sm sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none" aria-label="Tabs">
+            <a
+              href="/"
+              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer font-bold"
+            >
+              🏠 লাইভ শপ ↗
+            </a>
             {[
               { id: "dashboard", label: "📊 ড্যাশবোর্ড", desc: "স্টোর অ্যানালিটিক্স" },
               { id: "products", label: "📦 পণ্য CRUD", desc: "পণ্য তালিকা ও সংযোজন" },
@@ -290,6 +489,64 @@ export default function AdminDashboard() {
         {activeTab === "dashboard" && (
           <div className="space-y-8 animate-fadeIn">
             
+            {/* Date Range Selector & Report Actions Header */}
+            <div className="bg-white rounded-2xl border border-brand-beige-dark p-5 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                {(["today", "week", "month", "custom"] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => {
+                      setDateFilter(filter);
+                      setHoveredPoint(null);
+                    }}
+                    className={`px-4 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                      dateFilter === filter
+                        ? "bg-brand-forest border-brand-forest text-brand-beige"
+                        : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
+                    }`}
+                  >
+                    {filter === "today" ? "আজকের রিপোর্ট" : filter === "week" ? "এই সপ্তাহের" : filter === "month" ? "এই মাসের" : "কাস্টম রেঞ্জ"}
+                  </button>
+                ))}
+
+                {dateFilter === "custom" && (
+                  <div className="flex items-center gap-1.5 ml-2 animate-fadeIn">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="bg-brand-beige border border-brand-beige-dark text-[11px] rounded-lg p-1.5 text-brand-charcoal focus:outline-none"
+                    />
+                    <span className="text-[10px] text-stone-400">থেকে</span>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="bg-brand-beige border border-brand-beige-dark text-[11px] rounded-lg p-1.5 text-brand-charcoal focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleExportCSVReport}
+                  className="bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-beige px-4 py-2 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  📥 এক্সেল/CSV রিপোর্ট
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="bg-white hover:bg-brand-beige border border-brand-beige-dark text-brand-charcoal px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  📄 PDF / প্রিন্ট করুন
+                </button>
+              </div>
+            </div>
+
             {/* KPI Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
               
@@ -298,7 +555,7 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">মোট বিক্রয়</span>
                   <p className="text-xl font-black text-brand-forest">৳{totalSales.toLocaleString("bn-BD")}</p>
-                  <p className="text-[9px] text-stone-400 font-light">সব সফল অর্ডারের যোগফল</p>
+                  <p className="text-[9px] text-stone-400 font-light">সফল অর্ডারের যোগফল</p>
                 </div>
                 <div className="p-2 bg-brand-forest/5 text-brand-forest rounded-xl border border-brand-forest/10 text-base font-bold">
                   ৳
@@ -310,7 +567,7 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">মোট অর্ডার</span>
                   <p className="text-xl font-black text-brand-charcoal">{totalOrders} টি</p>
-                  <p className="text-[9px] text-stone-400 font-light">ইন-অ্যাপ ও সিওডি বুকিং</p>
+                  <p className="text-[9px] text-stone-400 font-light">তারিখ অনুযায়ী অর্ডার সংখ্যা</p>
                 </div>
                 <div className="p-2 bg-stone-100 text-brand-charcoal rounded-xl border border-stone-200 text-base font-bold">
                   📋
@@ -321,8 +578,8 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between">
                 <div className="space-y-1">
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">গড় অর্ডার মূল্য</span>
-                  <p className="text-xl font-black text-brand-charcoal font-sans">৳{avgBasketSize.toLocaleString("bn-BD")}</p>
-                  <p className="text-[9px] text-stone-400 font-light">প্রতি গ্রাহকের গড় খরচ</p>
+                  <p className="text-xl font-black text-brand-charcoal">৳{avgBasketSize.toLocaleString("bn-BD")}</p>
+                  <p className="text-[9px] text-stone-400 font-light">প্রতি অর্ডারের গড় খরচ</p>
                 </div>
                 <div className="p-2 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 text-base font-bold">
                   ⚖️
@@ -342,11 +599,11 @@ export default function AdminDashboard() {
               </div>
 
               {/* Pending Payments card */}
-              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between animate-fadeIn">
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">বাকি পেমেন্ট (Pending)</span>
-                  <p className="text-xl font-black text-amber-600 font-sans">৳{pendingPayments.toLocaleString("bn-BD")}</p>
-                  <p className="text-[9px] text-stone-400 font-light">সব বকেয়া পেমেন্টের মোট পরিমাণ</p>
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">বাকি পেমেন্ট</span>
+                  <p className="text-xl font-black text-amber-600">৳{pendingPayments.toLocaleString("bn-BD")}</p>
+                  <p className="text-[9px] text-stone-400 font-light">বকেয়া বিলের মোট পরিমাণ</p>
                 </div>
                 <div className="p-2 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 text-base font-bold">
                   ⏳
@@ -354,11 +611,11 @@ export default function AdminDashboard() {
               </div>
 
               {/* Refunds This Month card */}
-              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between animate-fadeIn">
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between">
                 <div className="space-y-1">
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block font-semibold text-red-650">রিফান্ড (চলতি মাস)</span>
-                  <p className="text-xl font-black text-red-700 font-sans">৳{refundsThisMonth.toLocaleString("bn-BD")}</p>
-                  <p className="text-[9px] text-stone-400 font-light">এই মাসে সফল রিফান্ডসমূহ</p>
+                  <p className="text-xl font-black text-red-700">৳{refundsThisMonth.toLocaleString("bn-BD")}</p>
+                  <p className="text-[9px] text-stone-400 font-light">সব রিফান্ডের মোট পরিমাণ</p>
                 </div>
                 <div className="p-2 bg-red-50 text-red-700 rounded-xl border border-red-100 text-base font-bold">
                   💸
@@ -367,7 +624,264 @@ export default function AdminDashboard() {
 
             </div>
 
-            {/* Sub details charts & timeline mockup */}
+            {/* Charts Section: Row 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              {/* Sales Trend Line Chart (Spans 2 cols) */}
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm lg:col-span-2 space-y-4">
+                <div className="flex justify-between items-center border-b border-brand-beige-dark pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-brand-charcoal">বিক্রয়ের ট্রেন্ড এনালাইসিস (Sales Trend)</h3>
+                    <p className="text-[10px] text-stone-450 text-stone-400">ফিল্টার অনুযায়ী গ্রাফিকাল সেলস রিপোর্ট</p>
+                  </div>
+                  {hoveredPoint && (
+                    <span className="bg-brand-forest/10 border border-brand-forest/20 text-brand-forest text-[10px] font-bold px-2 py-0.5 rounded-lg animate-fadeIn">
+                      {hoveredPoint.label}: ৳{hoveredPoint.sales.toLocaleString("bn-BD")}
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative h-60 w-full flex items-end justify-center pt-6">
+                  {salesChartData.length > 0 ? (
+                    <svg viewBox="0 0 600 200" className="w-full h-full overflow-visible">
+                      <defs>
+                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#2D5A27" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#2D5A27" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      {/* Grid Lines */}
+                      <line x1="35" y1="25" x2="565" y2="25" stroke="#EAEAEA" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="35" y1="80" x2="565" y2="80" stroke="#EAEAEA" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="35" y1="135" x2="565" y2="135" stroke="#EAEAEA" strokeWidth="0.5" strokeDasharray="3" />
+                      <line x1="35" y1="165" x2="565" y2="165" stroke="#D1D5DB" strokeWidth="1" />
+
+                      {/* Area */}
+                      {(() => {
+                        const maxSales = Math.max(...salesChartData.map(dp => dp.sales), 100);
+                        const points = salesChartData.map((d, index) => {
+                          const x = 35 + (index / (salesChartData.length - 1 || 1)) * 530;
+                          const y = 165 - (d.sales / maxSales) * 140;
+                          return { x, y, label: d.label, sales: d.sales };
+                        });
+                        const linePath = points.reduce((path, p, i) => i === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`, "");
+                        const areaPath = points.length > 0 ? `${linePath} L ${points[points.length - 1].x} 165 L ${points[0].x} 165 Z` : "";
+                        return (
+                          <>
+                            {areaPath && <path d={areaPath} fill="url(#chartGradient)" />}
+                            {linePath && <path d={linePath} fill="none" stroke="#2D5A27" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+                            
+                            {/* Hover Interactive Dots */}
+                            {points.map((p, idx) => (
+                              <circle
+                                key={idx}
+                                cx={p.x}
+                                cy={p.y}
+                                r="4"
+                                fill="#2D5A27"
+                                stroke="#FFFFFF"
+                                strokeWidth="1.5"
+                                className="cursor-pointer hover:r-6 transition-all"
+                                onMouseEnter={() => setHoveredPoint(p)}
+                                onMouseLeave={() => setHoveredPoint(null)}
+                              />
+                            ))}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  ) : (
+                    <p className="text-stone-400 text-xs text-center py-20">চার্ট লোড করার মতো পর্যাপ্ত তথ্য নেই।</p>
+                  )}
+                </div>
+                {/* X Axis Labels */}
+                <div className="flex justify-between text-[8px] sm:text-[10px] text-stone-400 font-bold px-8 pt-1">
+                  <span>{salesChartData[0]?.label || ""}</span>
+                  <span>{salesChartData[Math.floor(salesChartData.length / 2)]?.label || ""}</span>
+                  <span>{salesChartData[salesChartData.length - 1]?.label || ""}</span>
+                </div>
+              </div>
+
+              {/* Category-wise Sales Breakdown Donut Chart */}
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm lg:col-span-1 space-y-4">
+                <div className="border-b border-brand-beige-dark pb-3">
+                  <h3 className="text-sm font-bold text-brand-charcoal">ক্যাটেগরি বিক্রয় শেয়ার (Category Share)</h3>
+                  <p className="text-[10px] text-stone-400">পোষা প্রাণীদের ক্যাটেগরি অনুযায়ী মোট রেভিনিউ শেয়ার</p>
+                </div>
+
+                <div className="flex flex-col items-center justify-center space-y-4 pt-4">
+                  {totalCatSales > 0 ? (
+                    <div className="relative w-36 h-36 flex items-center justify-center">
+                      <svg width="100%" height="100%" viewBox="0 0 100 100" className="transform -rotate-90">
+                        {donutSlices.map((slice, idx) => (
+                          <circle
+                            key={idx}
+                            cx="50"
+                            cy="50"
+                            r="40"
+                            fill="transparent"
+                            stroke={slice.color}
+                            strokeWidth="10"
+                            strokeDasharray={slice.strokeDash}
+                            strokeDashoffset={slice.strokeOffset}
+                            className="transition-all duration-500"
+                          />
+                        ))}
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-[10px] uppercase font-bold text-stone-400">সর্বমোট</span>
+                        <span className="text-xs font-black text-brand-forest">৳{totalCatSales.toLocaleString("bn-BD")}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-full border-4 border-dashed border-stone-200 animate-spin" />
+                  )}
+
+                  {/* Legends */}
+                  <div className="w-full text-[10px] font-bold text-stone-500 space-y-1">
+                    {donutSlices.map((slice, idx) => (
+                      <div key={idx} className="flex justify-between items-center">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: slice.color }} />
+                          <span className="capitalize">{slice.name === "cats" ? "বিড়াল (Cats)" : slice.name === "dogs" ? "কুকুর (Dogs)" : "পাখি ও অন্যান্য"}</span>
+                        </div>
+                        <span className="text-brand-charcoal font-black">{slice.percent}% (৳{slice.value.toLocaleString("bn-BD")})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Charts Section: Row 2 */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              {/* Profit Margins & Cost Analysis */}
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm space-y-4">
+                <div className="border-b border-brand-beige-dark pb-3">
+                  <h3 className="text-sm font-bold text-brand-charcoal">লাভ-ক্ষতি ও মার্জিন (Profit Margins)</h3>
+                  <p className="text-[10px] text-stone-400">রাজস্ব, ক্রয় মূল্য ও নিট লাভ তুলনা বিশ্লেষণ</p>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="bg-brand-beige/20 p-2.5 rounded-lg border border-brand-beige-dark">
+                      <p className="text-[9px] font-bold text-stone-400 block uppercase">রাজস্ব (Revenue)</p>
+                      <p className="text-xs font-black text-brand-forest mt-1">৳{totalSales.toLocaleString("bn-BD")}</p>
+                    </div>
+                    <div className="bg-red-50/20 p-2.5 rounded-lg border border-red-100">
+                      <p className="text-[9px] font-bold text-red-400 block uppercase">ক্রয়মূল্য (Cost)</p>
+                      <p className="text-xs font-black text-red-700 mt-1">৳{totalCost.toLocaleString("bn-BD")}</p>
+                    </div>
+                    <div className="bg-emerald-50/20 p-2.5 rounded-lg border border-emerald-100">
+                      <p className="text-[9px] font-bold text-emerald-500 block uppercase">নিট লাভ (Profit)</p>
+                      <p className="text-xs font-black text-emerald-800 mt-1">৳{totalProfit.toLocaleString("bn-BD")}</p>
+                    </div>
+                  </div>
+
+                  {/* Progress Gauge */}
+                  <div className="bg-brand-beige/10 p-4 rounded-xl border border-brand-beige-dark space-y-2.5 text-xs">
+                    <div className="flex justify-between font-bold">
+                      <span>নিট লাভ মার্জিন (Net Profit Margin):</span>
+                      <span className="text-emerald-700 font-extrabold">{profitMargin}%</span>
+                    </div>
+                    <div className="w-full bg-stone-100 h-2.5 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-emerald-600 h-2.5 rounded-full transition-all duration-500" 
+                        style={{ width: `${profitMargin}%` }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-stone-400 font-light mt-0.5">অর্ডারের গড় মুনাফার হার {profitMargin}% যা খুবই সন্তোষজনক।</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Acquisition (New vs Returning) */}
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm space-y-4">
+                <div className="border-b border-brand-beige-dark pb-3">
+                  <h3 className="text-sm font-bold text-brand-charcoal">গ্রাহক রিটেনশন রিপোর্ট (Acquisition)</h3>
+                  <p className="text-[10px] text-stone-400">নতুন বনাম নিয়মিত খরিদ্দার বিশ্লেষণ রিপোর্ট</p>
+                </div>
+
+                <div className="space-y-6 pt-4">
+                  {/* Split Visual Meter */}
+                  <div className="flex w-full h-8 rounded-xl overflow-hidden border border-brand-beige-dark text-[9px] font-black text-white text-center">
+                    {customerSplit.newPercent > 0 && (
+                      <div 
+                        className="bg-brand-forest flex items-center justify-center transition-all" 
+                        style={{ width: `${customerSplit.newPercent}%` }}
+                        title={`নতুন খরিদ্দার: ${customerSplit.newCount}টি`}
+                      >
+                        নতুন ({customerSplit.newPercent}%)
+                      </div>
+                    )}
+                    {customerSplit.returningPercent > 0 && (
+                      <div 
+                        className="bg-amber-500 flex items-center justify-center transition-all" 
+                        style={{ width: `${customerSplit.returningPercent}%` }}
+                        title={`নিয়মিত খরিদ্দার: ${customerSplit.returningCount}টি`}
+                      >
+                        নিয়মিত ({customerSplit.returningPercent}%)
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-stone-500">
+                        <span className="w-2.5 h-2.5 bg-brand-forest rounded-full" />
+                        <span>নতুন গ্রাহক (New Customers)</span>
+                      </div>
+                      <p className="text-lg font-black text-brand-charcoal pl-4">{customerSplit.newCount} জন</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-stone-500">
+                        <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
+                        <span>নিয়মিত গ্রাহক (Returning)</span>
+                      </div>
+                      <p className="text-lg font-black text-brand-charcoal pl-4">{customerSplit.returningCount} জন</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Selling Products List */}
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm space-y-4">
+                <div className="border-b border-brand-beige-dark pb-3">
+                  <h3 className="text-sm font-bold text-brand-charcoal">সেরা বিক্রিত পণ্য (Top Products)</h3>
+                  <p className="text-[10px] text-stone-400">এই সময়সীমায় সর্বোচ্চ বিক্রয়কৃত ৫টি পোষা সামগ্রী</p>
+                </div>
+
+                <div className="space-y-3.5 pt-2 text-xs">
+                  {topProducts.length > 0 ? (
+                    topProducts.map((p, idx) => {
+                      const maxRevenue = Math.max(...topProducts.map(t => t.revenue), 1);
+                      const percentWidth = (p.revenue / maxRevenue) * 100;
+                      return (
+                        <div key={p.id} className="space-y-1.5">
+                          <div className="flex justify-between font-bold text-brand-charcoal">
+                            <span className="truncate max-w-[150px]">{idx + 1}. {p.name}</span>
+                            <span className="font-extrabold text-brand-forest">৳{p.revenue.toLocaleString("bn-BD")} ({p.quantity}x)</span>
+                          </div>
+                          <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-brand-forest h-2 rounded-full" 
+                              style={{ width: `${percentWidth}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-stone-400 text-center py-8">কোনো প্রোডাক্ট বিক্রির ডাটা পাওয়া যায়নি।</p>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Sub details charts & recent timeline */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
               {/* Order Status Breakdown */}
@@ -375,7 +889,7 @@ export default function AdminDashboard() {
                 <h3 className="text-sm font-bold text-brand-charcoal border-b border-brand-beige-dark pb-3">অর্ডার স্ট্যাটাস রিপোর্ট</h3>
                 
                 {(() => {
-                  const getCount = (status: Order["status"]) => orders.filter((o) => o.status === status).length;
+                  const getCount = (status: Order["status"]) => filteredOrders.filter((o) => o.status === status).length;
                   const received = getCount("Received");
                   const processing = getCount("Processing");
                   const shipped = getCount("Shipped");
@@ -444,10 +958,10 @@ export default function AdminDashboard() {
 
                 <div className="flow-root">
                   <ul className="-mb-8">
-                    {orders.slice(0, 4).map((order, idx) => (
+                    {filteredOrders.slice(0, 4).map((order, idx) => (
                       <li key={order.id}>
                         <div className="relative pb-8">
-                          {idx !== orders.slice(0, 4).length - 1 && (
+                          {idx !== filteredOrders.slice(0, 4).length - 1 && (
                             <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-brand-beige-dark" aria-hidden="true" />
                           )}
                           <div className="relative flex space-x-3 items-start">

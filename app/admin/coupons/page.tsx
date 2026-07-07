@@ -127,26 +127,18 @@ export default function AdminCouponsPage() {
   return (
     <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
       
-      {/* Header Banner */}
-      <header className="bg-brand-charcoal text-brand-beige py-6 px-4 sm:px-6 lg:px-8 border-b border-neutral-900 shadow-md">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🏷️</span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Paws&Co. কুপন ও প্রমোশন ম্যানেজার</h1>
-            </div>
-            <p className="text-xs text-stone-400 font-light">ডিসকাউন্ট কুপন তৈরি, ব্যবহার ট্র্যাকিং এবং অফার ক্যাম্পেইন পরিচালনা করুন</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin?tab=dashboard"
-              className="text-xs font-semibold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-brand-beige-dark px-4 py-2 rounded-full border border-stone-600 transition-colors"
-            >
-              ← এডমিন ড্যাশবোর্ড
-            </Link>
-          </div>
+      {/* Navigation Bar */}
+      <section className="bg-white border-b border-brand-beige-dark px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex gap-2 items-center">
+          <Link
+            href="/admin?tab=dashboard"
+            className="px-4 py-2 text-xs font-bold rounded-lg border bg-brand-charcoal border-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 transition-colors"
+          >
+            ← এডমিন ড্যাশবোর্ড
+          </Link>
+          <span className="text-xs font-bold text-stone-600">🏷️ কুপন ও প্রমোশন ম্যানেজার</span>
         </div>
-      </header>
+      </section>
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">

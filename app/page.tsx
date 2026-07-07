@@ -4,6 +4,24 @@ import React, { useState, useEffect } from "react";
 import { useShop } from "@/context/ShopContext";
 
 export default function Home() {
+  const { products, reviews, addToCart, siteSettings } = useShop();
+
+  const getProductRating = (prodId: string) => {
+    const prodReviews = (reviews || []).filter(r => r.productId === prodId && r.status === "approved");
+    if (prodReviews.length === 0) return { avg: 4.5, count: 5 };
+    const sum = prodReviews.reduce((acc, r) => acc + r.rating, 0);
+    return {
+      avg: Math.round((sum / prodReviews.length) * 10) / 10,
+      count: prodReviews.length
+    };
+  };
+
+  const featuredProducts = products.filter(p => siteSettings?.featuredProductIds?.includes(p.id));
+  const displayFeatured = featuredProducts.length > 0 ? featuredProducts : products.slice(0, 3);
+
+  const trendingProducts = products.filter(p => siteSettings?.trendingProductIds?.includes(p.id));
+  const displayTrending = trendingProducts.length > 0 ? trendingProducts : products.slice(3, 6);
+
   return (
     <div className="bg-brand-beige flex-1 flex flex-col font-sans">
       
@@ -17,13 +35,12 @@ export default function Home() {
               ✨ বাংলাদেশে প্রথম প্রিমিয়াম পেট শপ
             </div>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-brand-charcoal leading-[1.2]">
-              আপনার শখের পোষা প্রাণীর জন্য <br />
-              <span className="text-brand-forest">সবচেয়ে সেরা এক্সেসরিজ</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-brand-charcoal leading-[1.2] whitespace-pre-line">
+              {siteSettings?.heroBannerTitle || "আপনার শখের পোষা প্রাণীর জন্য সবচেয়ে সেরা এক্সেসরিজ"}
             </h1>
             
-            <p className="text-base sm:text-lg text-stone-600 max-w-xl mx-auto lg:mx-0 font-light leading-relaxed">
-              স্লিক, মিনিমালিস্ট ডিজাইন এবং প্রিমিয়াম কোয়ালিটির কলার, অর্গানিক ফুড এবং গ্রুমিং কিট সংগ্রহ করুন। ঢাকার ভেতরে ২৪ ঘণ্টা এবং বাইরে ৭২ ঘণ্টার মধ্যে দ্রুত ডেলিভারি।
+            <p className="text-base sm:text-lg text-stone-600 max-w-xl mx-auto lg:mx-0 font-light leading-relaxed whitespace-pre-line">
+              {siteSettings?.heroBannerSubtitle || "স্লিক, মিনিমালিস্ট ডিজাইন এবং প্রিমিয়াম কোয়ালিটির কলার, অর্গানিক ফুড এবং গ্রুমিং কিট সংগ্রহ করুন। ঢাকার ভেতরে ২৪ ঘণ্টা এবং বাইরে ৭২ ঘণ্টার মধ্যে দ্রুত ডেলিভারি।"}
             </p>
             
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
@@ -42,9 +59,15 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Hero Right Content: Premium Lifestyle Image Slideshow */}
+          {/* Hero Right Content: Settings-driven image / Slideshow */}
           <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden border border-brand-beige-dark shadow-md bg-brand-beige">
-            {(() => {
+            {siteSettings?.heroBannerUrl && siteSettings.heroBannerUrl !== "/hero.png" ? (
+              <img
+                src={siteSettings.heroBannerUrl}
+                alt="Paws & Co. Hero Banner"
+                className="absolute inset-0 object-cover w-full h-full"
+              />
+            ) : (() => {
               const HERO_SLIDES = ["/hero.png", "/hero2.png", "/hero3.png"];
               const [currentSlide, setCurrentSlide] = React.useState(0);
 
@@ -197,6 +220,122 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Featured Products Section */}
+      <section className="py-16 bg-white border-t border-b border-brand-beige-dark">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-2">
+            <span className="bg-brand-forest/10 text-brand-forest px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              ⭐ Featured
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-brand-charcoal">ফিচার্ড প্রোডাক্টস (Featured Products)</h2>
+            <p className="text-xs text-stone-500 font-light max-w-sm mx-auto">আমাদের শপের সবচেয়ে আকর্ষণীয় ও টপ রেটেড পণ্যগুলোর সমাহার</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayFeatured.map((product) => {
+              const rating = getProductRating(product.id);
+              return (
+                <div key={product.id} className="bg-brand-beige/25 rounded-2xl border border-brand-beige-dark overflow-hidden flex flex-col justify-between hover:shadow-lg transition-all duration-300 group">
+                  <div className="p-6 space-y-4">
+                    <div className="aspect-square bg-white rounded-xl overflow-hidden border border-brand-beige-dark relative flex items-center justify-center">
+                      <img
+                        src={product.imageUrl || "/collar.png"}
+                        alt={product.name}
+                        className="w-4/5 h-4/5 object-contain group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-3 left-3 bg-brand-forest text-brand-beige text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">
+                        {product.category}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-amber-500">
+                        <span>{"★".repeat(Math.round(rating.avg))}</span>
+                        <span className="text-stone-400">({rating.count})</span>
+                      </div>
+                      <h3 className="text-xs sm:text-sm font-bold text-brand-charcoal line-clamp-1">{product.name}</h3>
+                      <p className="text-[10px] text-stone-400 font-light line-clamp-2">{product.description || "প্রিমিয়াম কোয়ালিটি নিশ্চিত করতে আমাদের নিজস্ব ব্র্যান্ড কালেকশন।"}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 border-t border-brand-beige-dark bg-white flex justify-between items-center">
+                    <span className="text-xs sm:text-sm font-black text-brand-forest">৳{product.price.toLocaleString("bn-BD")}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        addToCart(product);
+                        alert(`✓ "${product.name}" কার্টে যোগ করা হয়েছে!`);
+                      }}
+                      className="bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-beige px-3.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-colors cursor-pointer"
+                    >
+                      কিনুন
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Trending Products Section */}
+      <section className="py-16 bg-brand-beige">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-2">
+            <span className="bg-amber-100 text-amber-700 px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              🔥 Trending
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-brand-charcoal">চলতি ট্রেন্ড (Trending Products)</h2>
+            <p className="text-xs text-stone-500 font-light max-w-sm mx-auto">চলতি সপ্তাহে পোষা প্রাণীদের জন্য সবচেয়ে বেশি বিক্রিত পণ্যের তালিকা</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayTrending.map((product) => {
+              const rating = getProductRating(product.id);
+              return (
+                <div key={product.id} className="bg-white rounded-2xl border border-brand-beige-dark overflow-hidden flex flex-col justify-between hover:shadow-lg transition-all duration-300 group">
+                  <div className="p-6 space-y-4">
+                    <div className="aspect-square bg-brand-beige/10 rounded-xl overflow-hidden border border-brand-beige-dark relative flex items-center justify-center">
+                      <img
+                        src={product.imageUrl || "/collar.png"}
+                        alt={product.name}
+                        className="w-4/5 h-4/5 object-contain group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-3 left-3 bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">
+                        {product.category}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-amber-500">
+                        <span>{"★".repeat(Math.round(rating.avg))}</span>
+                        <span className="text-stone-400">({rating.count})</span>
+                      </div>
+                      <h3 className="text-xs sm:text-sm font-bold text-brand-charcoal line-clamp-1">{product.name}</h3>
+                      <p className="text-[10px] text-stone-400 font-light line-clamp-2">{product.description || "প্রিমিয়াম কোয়ালিটির বিড়ালের বেল্ট এবং অ্যাক্সেসরিজ।"}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 border-t border-brand-beige-dark bg-white flex justify-between items-center">
+                    <span className="text-xs sm:text-sm font-black text-brand-forest">৳{product.price.toLocaleString("bn-BD")}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        addToCart(product);
+                        alert(`✓ "${product.name}" কার্টে যোগ করা হয়েছে!`);
+                      }}
+                      className="bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-beige px-3.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-colors cursor-pointer"
+                    >
+                      কিনুন
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* 4. Bundle & Save Promo */}
       <section id="bundles" className="bg-brand-forest text-brand-beige py-16 px-4 sm:px-6 lg:px-8 border-t border-b border-brand-beige-dark">
         <div className="max-w-5xl mx-auto text-center space-y-8">
@@ -244,15 +383,15 @@ export default function Home() {
             <ul className="space-y-2 text-xs font-light">
               <li><a href="/tracking" className="hover:text-brand-beige transition-colors">অर्डर ট্র্যাকিং</a></li>
               <li><a href="/faq" className="hover:text-brand-beige transition-colors">জিজ্ঞাসাবাদ (FAQs)</a></li>
-              <li><a href="https://wa.me/8801700000000" className="hover:text-brand-beige transition-colors">হোয়াটসঅ্যাপ সাপোর্ট</a></li>
+              <li><a href={siteSettings?.contactWhatsapp || "https://wa.me/8801700000000"} target="_blank" rel="noopener noreferrer" className="hover:text-brand-beige transition-colors">হোয়াটসঅ্যাপ সাপোর্ট</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-xs uppercase font-bold text-white tracking-wider mb-4">যোগাযোগ</h4>
-            <p className="text-xs font-light leading-relaxed">
-              গুলশান-২, ঢাকা, বাংলাদেশ<br />
-              ইমেইল: support@pawsco.com.bd<br />
-              ফোন: +৮৮০ ১৭০০০০০০০০
+            <p className="text-xs font-light leading-relaxed whitespace-pre-line">
+              {siteSettings?.contactAddress || "গুলশান-২, ঢাকা, বাংলাদেশ"}<br />
+              ইমেইল: {siteSettings?.contactEmail || "support@pawsco.com.bd"}<br />
+              ফোন: {siteSettings?.contactPhone || "+৮৮০ ১৭০০০০০০০০"}
             </p>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Product, CartItem, Order, ShopContextType, Customer, Coupon, CouponUsage, StockLog, ProductVariant, Review, ShippingSettings, RefundLog } from "@/types";
+import { Product, CartItem, Order, ShopContextType, Customer, Coupon, CouponUsage, StockLog, ProductVariant, Review, ShippingSettings, RefundLog, SiteSettings, Staff, StaffActivityLog } from "@/types";
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
@@ -191,6 +191,7 @@ const INITIAL_PRODUCTS: Product[] = [
     brand: "Pawsome",
     stock: 23,
     lowStockThreshold: 5,
+    costPrice: 700,
     variants: [
       { id: "var-1", size: "M", color: "Forest Green", stock: 12 },
       { id: "var-2", size: "L", color: "Forest Green", stock: 8 },
@@ -198,14 +199,14 @@ const INITIAL_PRODUCTS: Product[] = [
       { id: "var-4", size: "L", color: "Crimson Red", stock: 0 },
     ]
   },
-  { id: "2", name: "Organic Salmon Grain-Free Food (1.5kg)", price: 1250, category: "cats", brand: "MeowMix", stock: 4, lowStockThreshold: 5 },
-  { id: "cat_litter_premium", name: "প্রিমিয়াম সিলিকা ক্যাট লিটার (৫ লিটার)", price: 850, category: "cats", brand: "Pawsome", stock: 25, lowStockThreshold: 5 },
-  { id: "leather_dog_leash", name: "লেদার ডগ লিশ ও হারনেস বেল্ট", price: 1100, category: "dogs", brand: "Pawsome", stock: 15, lowStockThreshold: 5 },
-  { id: "dog_shampoo", name: "অর্গানিক ডগ শ্যাম্পু ও কন্ডিশনার", price: 650, category: "dogs", brand: "DoggyStyles", stock: 2, lowStockThreshold: 5 },
-  { id: "bird_feed_mix", name: "প্রিমিয়াম সিড মিক্স পাখির খাবার (১ কেজি)", price: 450, category: "birds", brand: "Pawsome", stock: 18, lowStockThreshold: 5 },
-  { id: "bird_cage_swing", name: "পাখির খাঁচার খেলনা ও দোলনা", price: 350, category: "birds", brand: "Pawsome", stock: 0, lowStockThreshold: 5 },
-  { id: "cat_nip_spray", name: "অর্গানিক ক্যাটনিপ স্প্রে (১০০ মিলি)", price: 550, category: "cats", brand: "MeowMix", stock: 10, lowStockThreshold: 5 },
-  { id: "dog_chew_toy", name: "ডেন্টাল ডগ চিউ টয়", price: 400, category: "dogs", brand: "DoggyStyles", stock: 30, lowStockThreshold: 5 },
+  { id: "2", name: "Organic Salmon Grain-Free Food (1.5kg)", price: 1250, category: "cats", brand: "MeowMix", stock: 4, lowStockThreshold: 5, costPrice: 750 },
+  { id: "cat_litter_premium", name: "প্রিমিয়াম সিলিকা ক্যাট লিটার (৫ লিটার)", price: 850, category: "cats", brand: "Pawsome", stock: 25, lowStockThreshold: 5, costPrice: 500 },
+  { id: "leather_dog_leash", name: "লেদার ডগ লিশ ও হারনেস বেল্ট", price: 1100, category: "dogs", brand: "Pawsome", stock: 15, lowStockThreshold: 5, costPrice: 650 },
+  { id: "dog_shampoo", name: "অর্গানিক ডগ শ্যাম্পু ও কন্ডিশনার", price: 650, category: "dogs", brand: "DoggyStyles", stock: 2, lowStockThreshold: 5, costPrice: 380 },
+  { id: "bird_feed_mix", name: "প্রিমিয়াম সিড মিক্স পাখির খাবার (১ কেজি)", price: 450, category: "birds", brand: "Pawsome", stock: 18, lowStockThreshold: 5, costPrice: 250 },
+  { id: "bird_cage_swing", name: "পাখির খাঁচার খেলনা ও দোলনা", price: 350, category: "birds", brand: "Pawsome", stock: 0, lowStockThreshold: 5, costPrice: 200 },
+  { id: "cat_nip_spray", name: "অর্গানিক ক্যাটনিপ স্প্রে (১০০ মিলি)", price: 550, category: "cats", brand: "MeowMix", stock: 10, lowStockThreshold: 5, costPrice: 300 },
+  { id: "dog_chew_toy", name: "ডেন্টাল ডগ চিউ টয়", price: 400, category: "dogs", brand: "DoggyStyles", stock: 30, lowStockThreshold: 5, costPrice: 220 },
 ];
 
 const INITIAL_ORDERS: Order[] = [
@@ -385,6 +386,63 @@ const INITIAL_REFUND_LOGS: RefundLog[] = [
   }
 ];
 
+const INITIAL_SITE_SETTINGS: SiteSettings = {
+  heroBannerUrl: "/hero.png",
+  heroBannerTitle: "আপনার শখের পোষা প্রাণীর জন্য সবচেয়ে সেরা এক্সেসরিজ",
+  heroBannerSubtitle: "স্লিক, মিনিমালিস্ট ডিজাইন এবং প্রিমিয়াম কোয়ালিটির কলার, অর্গানিক ফুড এবং গ্রুমিং কিট সংগ্রহ করুন। ঢাকার ভেতরে ২৪ ঘণ্টা এবং বাইরে ৭২ ঘণ্টার মধ্যে দ্রুত ডেলিভারি।",
+  contactPhone: "+৮৮০ ১৭০০০০০০০০",
+  contactEmail: "support@pawsco.com.bd",
+  contactAddress: "গুলশান-২, ঢাকা, বাংলাদেশ",
+  contactWhatsapp: "https://wa.me/8801700000000",
+  socialFacebook: "https://facebook.com/pawsco",
+  socialInstagram: "https://instagram.com/pawsco",
+  seoHomeTitle: "Paws & Co. | Premium Pet Accessories Bangladesh",
+  seoHomeDescription: "High-scale professional e-commerce platform for pet accessories in Bangladesh.",
+  seoProductsTitle: "Products Catalog | Paws & Co.",
+  seoProductsDescription: "Browse our collection of premium pet collars, grain-free organic foods, and cages.",
+  featuredProductIds: ["1", "cat_litter_premium", "leather_dog_leash"],
+  trendingProductIds: ["2", "dog_shampoo", "dog_chew_toy"]
+};
+
+const INITIAL_STAFF: Staff[] = [
+  {
+    id: "staff-admin",
+    name: "Administrator",
+    email: "admin@paws.co",
+    password: "admin123",
+    role: "Super Admin",
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "staff-manager",
+    name: "Rahat Manager",
+    email: "manager@paws.co",
+    password: "manager123",
+    role: "Manager",
+    createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "staff-support",
+    name: "Sumaiya Support",
+    email: "support@paws.co",
+    password: "support123",
+    role: "Support",
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
+const INITIAL_STAFF_LOGS: StaffActivityLog[] = [
+  {
+    id: "slog-1",
+    staffId: "staff-admin",
+    staffName: "Administrator",
+    staffEmail: "admin@paws.co",
+    staffRole: "Super Admin",
+    action: "System setup initialized successfully.",
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
 export function ShopProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
@@ -398,6 +456,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponDiscount, setCouponDiscount] = useState<number>(0);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
+  
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [activeStaff, setActiveStaff] = useState<Staff | null>(null);
+  const [staffLogs, setStaffLogs] = useState<StaffActivityLog[]>([]);
 
   // Helper function to log stock changes (defined early so hydration can reference it)
   const logStockChange = (
@@ -494,6 +557,35 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       } else {
         setRefundLogs(INITIAL_REFUND_LOGS);
         localStorage.setItem("paws_refund_logs", JSON.stringify(INITIAL_REFUND_LOGS));
+      }
+
+      const storedSite = localStorage.getItem("paws_site_settings");
+      if (storedSite) {
+        setSiteSettings(JSON.parse(storedSite));
+      } else {
+        setSiteSettings(INITIAL_SITE_SETTINGS);
+        localStorage.setItem("paws_site_settings", JSON.stringify(INITIAL_SITE_SETTINGS));
+      }
+
+      const storedStaff = localStorage.getItem("paws_staff_list");
+      if (storedStaff) {
+        setStaffList(JSON.parse(storedStaff));
+      } else {
+        setStaffList(INITIAL_STAFF);
+        localStorage.setItem("paws_staff_list", JSON.stringify(INITIAL_STAFF));
+      }
+
+      const storedActiveStaff = localStorage.getItem("paws_active_staff");
+      if (storedActiveStaff) {
+        setActiveStaff(JSON.parse(storedActiveStaff));
+      }
+
+      const storedStaffLogs = localStorage.getItem("paws_staff_logs");
+      if (storedStaffLogs) {
+        setStaffLogs(JSON.parse(storedStaffLogs));
+      } else {
+        setStaffLogs(INITIAL_STAFF_LOGS);
+        localStorage.setItem("paws_staff_logs", JSON.stringify(INITIAL_STAFF_LOGS));
       }
     } catch (error) {
       console.error("Error reading localStorage keys:", error);
@@ -1066,6 +1158,102 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("paws_shipping_settings", JSON.stringify(settings));
   };
 
+  const updateSiteSettings = (settings: SiteSettings) => {
+    setSiteSettings(settings);
+    localStorage.setItem("paws_site_settings", JSON.stringify(settings));
+  };
+
+  const logActivity = (action: string) => {
+    const currentName = activeStaff ? activeStaff.name : "System";
+    const currentEmail = activeStaff ? activeStaff.email : "system@paws.co";
+    const currentRole = activeStaff ? activeStaff.role : "Super Admin";
+    const currentId = activeStaff ? activeStaff.id : "staff-admin";
+
+    const newLog: StaffActivityLog = {
+      id: `slog-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      staffId: currentId,
+      staffName: currentName,
+      staffEmail: currentEmail,
+      staffRole: currentRole,
+      action,
+      createdAt: new Date().toISOString()
+    };
+
+    setStaffLogs(prev => {
+      const updated = [newLog, ...prev];
+      localStorage.setItem("paws_staff_logs", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const addStaff = (name: string, email: string, role: Staff["role"], password?: string) => {
+    const newStaff: Staff = {
+      id: `staff-${Date.now()}`,
+      name,
+      email,
+      password: password || "123456",
+      role,
+      createdAt: new Date().toISOString()
+    };
+
+    setStaffList(prev => {
+      const updated = [...prev, newStaff];
+      localStorage.setItem("paws_staff_list", JSON.stringify(updated));
+      return updated;
+    });
+
+    logActivity(`Added new staff member: "${name}" (${role})`);
+  };
+
+  const loginStaff = (email: string, password?: string): boolean => {
+    const match = staffList.find(s => s.email.toLowerCase() === email.toLowerCase() && s.password === password);
+    if (match) {
+      setActiveStaff(match);
+      localStorage.setItem("paws_active_staff", JSON.stringify(match));
+      
+      const newLog: StaffActivityLog = {
+        id: `slog-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        staffId: match.id,
+        staffName: match.name,
+        staffEmail: match.email,
+        staffRole: match.role,
+        action: "Logged into the admin panel.",
+        createdAt: new Date().toISOString()
+      };
+      setStaffLogs(prev => {
+        const updated = [newLog, ...prev];
+        localStorage.setItem("paws_staff_logs", JSON.stringify(updated));
+        return updated;
+      });
+
+      return true;
+    }
+    return false;
+  };
+
+  const logoutStaff = () => {
+    if (activeStaff) {
+      const match = activeStaff;
+      const newLog: StaffActivityLog = {
+        id: `slog-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        staffId: match.id,
+        staffName: match.name,
+        staffEmail: match.email,
+        staffRole: match.role,
+        action: "Logged out from the admin panel.",
+        createdAt: new Date().toISOString()
+      };
+      setStaffLogs(prev => {
+        const updated = [newLog, ...prev];
+        localStorage.setItem("paws_staff_logs", JSON.stringify(updated));
+        return updated;
+      });
+    }
+
+    setActiveStaff(null);
+    localStorage.removeItem("paws_active_staff");
+  };
+
   const initiateRefund = (orderId: string, amount: number, method: string, reason: string) => {
     const newRefundLog: RefundLog = {
       id: `ref-${Date.now()}`,
@@ -1361,6 +1549,15 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         initiateRefund,
         updateOrderPayment,
         updateOrderCourier,
+        siteSettings,
+        updateSiteSettings,
+        staffList,
+        activeStaff,
+        staffLogs,
+        addStaff,
+        loginStaff,
+        logoutStaff,
+        logActivity,
       }}
     >
       {children}

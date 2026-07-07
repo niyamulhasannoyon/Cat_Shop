@@ -115,28 +115,19 @@ export default function CustomersList() {
 
   return (
     <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
-      {/* Header */}
-      <header className="bg-brand-charcoal text-brand-beige py-6 px-4 sm:px-6 lg:px-8 border-b border-neutral-900 shadow-md">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⚙️</span>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Paws&Co. এডমিন কন্ট্রোল প্যানেল</h1>
-            </div>
-            <p className="text-xs text-stone-400 font-light">স্টোরের পণ্য, গ্রাহক ও তাদের অর্ডারসমূহ পরিচালনা করুন</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="/"
-              className="text-xs font-semibold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-brand-beige-dark px-4 py-2 rounded-full border border-stone-600 transition-colors"
-            >
-              লাইভ শপে যান ↗
-            </a>
-            <span className="h-2.5 w-2.5 bg-emerald-500 rounded-full animate-pulse" title="System Online" />
-            <span className="text-xs text-stone-400 font-medium">সিস্টেম অনলাইন</span>
-          </div>
+      
+      {/* Navigation Bar */}
+      <section className="bg-white border-b border-brand-beige-dark px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex gap-2 items-center">
+          <Link
+            href="/admin?tab=dashboard"
+            className="px-4 py-2 text-xs font-bold rounded-lg border bg-brand-charcoal border-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 transition-colors"
+          >
+            ← এডমিন ড্যাশবোর্ড
+          </Link>
+          <span className="text-xs font-bold text-stone-600">👥 গ্রাহক তালিকা</span>
         </div>
-      </header>
+      </section>
 
       {/* Navigation tabs */}
       <section className="bg-white border-b border-brand-beige-dark py-1.5 shadow-sm sticky top-0 z-20">
