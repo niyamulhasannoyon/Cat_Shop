@@ -116,36 +116,37 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
-      
-      {/* Tabs Navigation */}
-      <section className="bg-white border-b border-brand-beige-dark px-4 sm:px-6 lg:px-8 py-3">
-        <div className="max-w-7xl mx-auto flex flex-wrap gap-2 items-center">
-          <Link
-            href="/admin?tab=dashboard"
-            className="px-4 py-2 text-xs font-bold rounded-lg border bg-brand-charcoal border-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 transition-colors"
-          >
-            ← এডমিন ড্যাশবোর্ড
-          </Link>
+    <div className="flex-1 flex flex-col min-h-screen text-brand-charcoal antialiased">
+
+      {/* Page Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-[#E5E0D8] px-6 pt-16 pb-4 lg:pt-5 lg:pb-4 sticky top-0 z-20 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-black text-brand-charcoal">সেটিংস ও চার্জ</h2>
+            <p className="text-[10px] text-stone-400 font-medium mt-0.5">শিপিং, সাইট কনফিগারেশন, ফিচার্ড শেলফ ও রিফান্ড লগস</p>
+          </div>
+        </div>
+        {/* Sub tabs */}
+        <div className="flex flex-wrap gap-1.5">
           {(["shipping", "site", "placements", "refunds"] as const).map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveSubTab(tab)}
-              className={`px-4 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+              className={`px-3 py-1.5 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
                 activeSubTab === tab
-                  ? "bg-brand-forest border-brand-forest text-brand-beige"
-                  : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
+                  ? "bg-brand-forest border-brand-forest text-white"
+                  : "bg-white border-[#E5E0D8] text-stone-500 hover:text-brand-charcoal hover:bg-[#F5F2EB]"
               }`}
             >
-              {tab === "shipping" ? "🚚 শিপিং জোন সেটিংস" : tab === "site" ? "🖥️ সাইট কনফিগারেশন" : tab === "placements" ? "⭐ ফিচার্ড ও ট্রেন্ডিং শেলফ" : "💸 রিফান্ড লগ ও ট্র্যাকিং"}
+              {tab === "shipping" ? "🚚 শিপিং জোন" : tab === "site" ? "🖥️ সাইট কনফিগ" : tab === "placements" ? "⭐ ফিচার্ড শেলফ" : "💸 রিফান্ড লগ"}
             </button>
           ))}
         </div>
-      </section>
+      </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+      <main className="flex-1 w-full py-6 px-4 sm:px-6 space-y-6">
         
         {activeSubTab === "shipping" && (
           <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm max-w-2xl mx-auto space-y-6 animate-fadeIn">

@@ -38,7 +38,7 @@ export default function CustomerDetailPage({ params }: PageProps) {
   // If customer not found
   if (!customer) {
     return (
-      <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal items-center justify-center p-6">
+      <div className="flex-1 flex flex-col min-h-screen text-brand-charcoal items-center justify-center p-6">
         <div className="bg-white rounded-2xl border border-brand-beige-dark p-8 shadow-md text-center space-y-4 max-w-md">
           <span className="text-5xl block">⚠️</span>
           <h1 className="text-lg font-bold">গ্রাহক পাওয়া যায়নি!</h1>
@@ -85,36 +85,30 @@ export default function CustomerDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
-      
-      {/* Navigation Bar */}
-      <section className="bg-white border-b border-brand-beige-dark px-4 sm:px-6 lg:px-8 py-3">
-        <div className="max-w-7xl mx-auto flex gap-2 items-center">
-          <Link
-            href="/admin/customers"
-            className="px-4 py-2 text-xs font-bold rounded-lg border bg-brand-charcoal border-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 transition-colors"
-          >
-            ← গ্রাহক তালিকা
-          </Link>
-          <span className="text-xs font-bold text-stone-600">👤 গ্রাহক প্রোফাইল বিস্তারিত</span>
-        </div>
-      </section>
+    <div className="flex-1 flex flex-col min-h-screen text-brand-charcoal antialiased">
+
+      {/* Page Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-[#E5E0D8] px-6 pt-16 pb-4 lg:pt-5 lg:pb-4 sticky top-0 z-20 flex items-center gap-3">
+        <Link
+          href="/admin/customers"
+          className="flex items-center gap-1 text-[10px] font-bold text-stone-400 hover:text-brand-charcoal transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          গ্রাহক তালিকা
+        </Link>
+        <span className="text-stone-300">/</span>
+        <h2 className="text-base font-black text-brand-charcoal">{customer.name}</h2>
+        <span className={`ml-auto text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+          customer.status === "active"
+            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+            : "bg-red-50 text-red-700 border-red-200"
+        }`}>
+          {customer.status === "active" ? "সক্রিয়" : "ব্লকড"}
+        </span>
+      </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
-        
-        {/* Breadcrumbs and Controls */}
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-brand-beige-dark pb-4">
-          <div className="space-y-0.5">
-            <div className="text-xs text-stone-400 font-light flex items-center gap-1">
-              <Link href="/admin" className="hover:underline">এডমিন</Link>
-              <span>/</span>
-              <Link href="/admin/customers" className="hover:underline">গ্রাহক তালিকা</Link>
-              <span>/</span>
-              <span className="text-stone-600">{customer.name}</span>
-            </div>
-            <h2 className="text-lg font-bold text-brand-charcoal">গ্রাহক প্রোফাইল ও ইতিহাস</h2>
-          </div>
+      <main className="flex-1 w-full py-6 px-4 sm:px-6 space-y-6">
           
           {/* Status actions */}
           <div className="flex items-center gap-3">
@@ -139,7 +133,6 @@ export default function CustomerDetailPage({ params }: PageProps) {
               {customer.status === "active" ? "🚫 ব্লক করুন" : "✓ আনব্লক করুন"}
             </button>
           </div>
-        </div>
 
         {/* Profile Card & Key Statistics Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

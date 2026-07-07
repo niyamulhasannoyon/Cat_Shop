@@ -118,23 +118,25 @@ export default function AdminReviewsPage() {
   };
 
   return (
-    <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
-      
-      {/* Navigation Bar */}
-      <section className="bg-white border-b border-brand-beige-dark px-4 sm:px-6 lg:px-8 py-3">
-        <div className="max-w-7xl mx-auto flex gap-2 items-center">
-          <Link
-            href="/admin?tab=dashboard"
-            className="px-4 py-2 text-xs font-bold rounded-lg border bg-brand-charcoal border-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 transition-colors"
-          >
-            ← এডমিন ড্যাশবোর্ড
-          </Link>
-          <span className="text-xs font-bold text-stone-600">💬 রিভিউ ও রেটিং মডারেটর</span>
+    <div className="flex-1 flex flex-col min-h-screen text-brand-charcoal antialiased">
+
+      {/* Page Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-[#E5E0D8] px-6 pt-16 pb-4 lg:pt-5 lg:pb-4 sticky top-0 z-20 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-base font-black text-brand-charcoal">রিভিউ মডারেটর</h2>
+          <p className="text-[10px] text-stone-400 font-medium mt-0.5">কাস্টমার রিভিউ অনুমোদন, প্রত্যাখ্যান ও মনিটরিং</p>
         </div>
-      </section>
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-stone-500">{selectedIds.length}টি নির্বাচিত</span>
+            <button onClick={handleBulkApprove} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition-colors">✓ অনুমোদন</button>
+            <button onClick={() => setBulkRejectModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition-colors">✕ বাতিল</button>
+          </div>
+        )}
+      </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+      <main className="flex-1 w-full py-6 px-4 sm:px-6 space-y-6">
         
         {/* Metric widgets */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

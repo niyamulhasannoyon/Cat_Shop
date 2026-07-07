@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useShop } from "@/context/ShopContext";
 import { Product, Order } from "@/types";
 
@@ -54,14 +55,21 @@ export default function AdminDashboard() {
     ];
   }, [activeStaff]);
 
-  // Navigation Tabs state
-  const [activeTab, setActiveTab] = useState<TabType>("orders");
+  // Read active tab from URL param (set by sidebar links)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawTab = searchParams.get("tab") as TabType | null;
 
-  useEffect(() => {
-    if (allowedTabs.length > 0 && !allowedTabs.some(t => t.id === activeTab)) {
-      setActiveTab(allowedTabs[0].id);
-    }
-  }, [allowedTabs, activeTab]);
+  const activeTab: TabType = useMemo(() => {
+    const defaultTab = allowedTabs[0]?.id || "orders";
+    if (!rawTab) return defaultTab;
+    if (allowedTabs.some(t => t.id === rawTab)) return rawTab;
+    return defaultTab;
+  }, [rawTab, allowedTabs]);
+
+  const setActiveTab = (tab: TabType) => {
+    router.push(`/admin?tab=${tab}`);
+  };
 
   // Order Details Modal and refund states
   const [activeOrderModal, setActiveOrderModal] = useState<Order | null>(null);
@@ -122,15 +130,7 @@ export default function AdminDashboard() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [formError, setFormError] = useState("");
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab") as TabType;
-      if (tab && ["dashboard", "products", "orders", "bundles", "audit_logs"].includes(tab)) {
-        setActiveTab(tab);
-      }
-    }
-  }, []);
+  // Tab is now driven by URL - no manual window.location parsing needed
 
 
 
@@ -465,70 +465,40 @@ export default function AdminDashboard() {
     return list;
   }, [products]);
 
+  // Tab label lookup
+  const activeTabLabel = allowedTabs.find(t => t.id === activeTab)?.label || "ড্যাশবোর্ড";
+
   return (
-    <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
-      
-      {/* Navigation tabs */}
-      <section className="bg-white border-b border-brand-beige-dark py-1.5 shadow-sm sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none" aria-label="Tabs">
-            <a
-              href="/"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer font-bold"
-            >
-              🏠 লাইভ শপ ↗
-            </a>
-            {allowedTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
-                className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 cursor-pointer ${
-                  activeTab === tab.id
-                    ? "bg-brand-forest text-brand-beige shadow-sm"
-                    : "text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-            {(activeStaff?.role === "Super Admin" || activeStaff?.role === "Manager") && (
-              <Link
-                href="/admin/customers"
-                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
-              >
-                👥 গ্রাহক তালিকা
-              </Link>
-            )}
-            {activeStaff?.role === "Super Admin" && (
-              <Link
-                href="/admin/coupons"
-                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
-              >
-                🏷️ কুপন ও প্রোমো
-              </Link>
-            )}
-            {(activeStaff?.role === "Super Admin" || activeStaff?.role === "Manager") && (
-              <Link
-                href="/admin/reviews"
-                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
-              >
-                💬 রিভিউ মডারেটর
-              </Link>
-            )}
-            {activeStaff?.role === "Super Admin" && (
-              <Link
-                href="/admin/settings"
-                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
-              >
-                ⚙️ সেটিংস ও চার্জ
-              </Link>
-            )}
-          </nav>
+    <div className="flex-1 flex flex-col min-h-screen text-brand-charcoal antialiased">
+
+      {/* Page Header Bar */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-[#E5E0D8] px-6 pt-16 pb-4 lg:pt-5 lg:pb-4 sticky top-0 z-20 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-base font-black text-brand-charcoal">{activeTabLabel}</h2>
+          <p className="text-[10px] text-stone-400 font-medium mt-0.5">
+            {allowedTabs.find(t => t.id === activeTab)?.desc || ""}
+          </p>
         </div>
-      </section>
+        {/* Quick tab pills */}
+        <div className="hidden sm:flex items-center gap-1.5">
+          {allowedTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                activeTab === tab.id
+                  ? "bg-brand-forest text-white shadow-sm"
+                  : "bg-[#F0EDE6] text-stone-500 hover:text-brand-charcoal hover:bg-[#E5E0D8]"
+              }`}
+            >
+              {tab.label.replace(/^[^ ]+ /, "")}
+            </button>
+          ))}
+        </div>
+      </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 w-full py-6 px-4 sm:px-6">
         
         {/* TAB 1: DASHBOARD ANALYTICS */}
         {activeTab === "dashboard" && (

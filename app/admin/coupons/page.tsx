@@ -144,23 +144,25 @@ export default function AdminCouponsPage() {
   };
 
   return (
-    <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
-      
-      {/* Navigation Bar */}
-      <section className="bg-white border-b border-brand-beige-dark px-4 sm:px-6 lg:px-8 py-3">
-        <div className="max-w-7xl mx-auto flex gap-2 items-center">
-          <Link
-            href="/admin?tab=dashboard"
-            className="px-4 py-2 text-xs font-bold rounded-lg border bg-brand-charcoal border-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 transition-colors"
-          >
-            ← এডমিন ড্যাশবোর্ড
-          </Link>
-          <span className="text-xs font-bold text-stone-600">🏷️ কুপন ও প্রমোশন ম্যানেজার</span>
+    <div className="flex-1 flex flex-col min-h-screen text-brand-charcoal antialiased">
+
+      {/* Page Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-[#E5E0D8] px-6 pt-16 pb-4 lg:pt-5 lg:pb-4 sticky top-0 z-20 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-base font-black text-brand-charcoal">কুপন ও প্রমোশন</h2>
+          <p className="text-[10px] text-stone-400 font-medium mt-0.5">প্রোমো কোড তৈরি, পরিচালনা ও অ্যানালিটিক্স</p>
         </div>
-      </section>
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="flex items-center gap-1.5 bg-brand-forest hover:bg-brand-forest/90 text-white px-4 py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all cursor-pointer flex-shrink-0"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          নতুন কুপন
+        </button>
+      </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+      <main className="flex-1 w-full py-6 px-4 sm:px-6 space-y-6">
         
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

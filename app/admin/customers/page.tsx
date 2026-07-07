@@ -132,74 +132,26 @@ export default function CustomersList() {
   };
 
   return (
-    <div className="bg-brand-beige min-h-screen flex flex-col font-sans text-brand-charcoal antialiased">
-      
-      {/* Navigation Bar */}
-      <section className="bg-white border-b border-brand-beige-dark px-4 sm:px-6 lg:px-8 py-3">
-        <div className="max-w-7xl mx-auto flex gap-2 items-center">
-          <Link
-            href="/admin?tab=dashboard"
-            className="px-4 py-2 text-xs font-bold rounded-lg border bg-brand-charcoal border-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 transition-colors"
-          >
-            ← এডমিন ড্যাশবোর্ড
-          </Link>
-          <span className="text-xs font-bold text-stone-600">👥 গ্রাহক তালিকা</span>
-        </div>
-      </section>
+    <div className="flex-1 flex flex-col min-h-screen text-brand-charcoal antialiased">
 
-      {/* Navigation tabs */}
-      <section className="bg-white border-b border-brand-beige-dark py-1.5 shadow-sm sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none" aria-label="Tabs">
-            <Link
-              href="/admin?tab=dashboard"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50"
-            >
-              📊 ড্যাশবোর্ড
-            </Link>
-            <Link
-              href="/admin?tab=products"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50"
-            >
-              📦 পণ্য CRUD
-            </Link>
-            <Link
-              href="/admin?tab=orders"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50"
-            >
-              📋 অর্ডার ম্যানেজার
-            </Link>
-            <Link
-              href="/admin?tab=bundles"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50"
-            >
-              🏷️ বান্ডেল অফার
-            </Link>
-            <Link
-              href="/admin/customers"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 bg-brand-forest text-brand-beige shadow-sm"
-            >
-              👥 গ্রাহক তালিকা
-            </Link>
-          </nav>
+      {/* Page Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-[#E5E0D8] px-6 pt-16 pb-4 lg:pt-5 lg:pb-4 sticky top-0 z-20 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-base font-black text-brand-charcoal">গ্রাহক তালিকা</h2>
+          <p className="text-[10px] text-stone-400 font-medium mt-0.5">সব রেজিস্টার্ড গ্রাহকের তথ্য ও একাউন্ট স্ট্যাটাস মনিটর করুন</p>
         </div>
-      </section>
+        <button
+          onClick={handleCSVExport}
+          className="flex items-center gap-1.5 bg-brand-forest hover:bg-brand-forest/90 text-white px-4 py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all cursor-pointer flex-shrink-0"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+          CSV এক্সপোর্ট
+        </button>
+      </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Title and CSV Export */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-brand-beige-dark pb-4">
-          <div>
-            <h2 className="text-lg font-bold text-brand-charcoal">গ্রাহক তালিকা পরিচালনা (Customer Management)</h2>
-            <p className="text-xs text-stone-500 font-light mt-0.5">সব রেজিস্টার্ড গ্রাহকের তথ্য, লাইফটাইম ভ্যালু ও একাউন্ট স্ট্যাটাস মনিটর করুন</p>
-          </div>
-          <button
-            onClick={handleCSVExport}
-            className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-5 py-2.5 rounded-full text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
-          >
-            📥 CSV এক্সপোর্ট করুন
-          </button>
-        </div>
+      <main className="flex-1 w-full py-6 px-4 sm:px-6 space-y-6">
+        {/* Filters Row */}
 
         {/* Search and Filters */}
         <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
