@@ -744,10 +744,16 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         );
       });
     }
+
+    logActivity(`Added new product: "${productWithId.name}" (Price: ৳${productWithId.price})`);
   };
 
   const deleteProduct = (id: string) => {
     setProducts((prev) => {
+      const target = prev.find(p => p.id === id);
+      if (target) {
+        logActivity(`Deleted product: "${target.name}" (ID: ${id})`);
+      }
       const updated = prev.filter((p) => p.id !== id);
       localStorage.setItem("paws_products", JSON.stringify(updated));
       return updated;
@@ -769,6 +775,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("paws_orders", JSON.stringify(updated));
       return updated;
     });
+
+    logActivity(`Order ${id} status updated to: "${status}"`);
 
     if (!oldOrder) return;
 
@@ -949,6 +957,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("paws_products", JSON.stringify(updatedProducts));
       return updatedProducts;
     });
+
+    logActivity(`Updated stock level for Product ID: ${productId} to ${newStock}`);
   };
 
   const bulkUpdateStock = (csvText: string) => {
@@ -983,6 +993,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         updateStock(productId, variantId, newStock, "restock", "admin_bulk_csv");
         updatedCount++;
       }
+
+      logActivity(`Bulk restocked ${updatedCount} products via CSV upload.`);
 
       return {
         success: true,
@@ -1297,6 +1309,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("paws_refund_logs", JSON.stringify(updated));
       return updated;
     });
+
+    logActivity(`Initiated refund of ৳${amount} via ${method} for Order ${orderId}`);
   };
 
   const updateOrderPayment = (orderId: string, status: "Paid" | "Unpaid" | "Partial", transactionId?: string) => {
@@ -1314,6 +1328,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("paws_orders", JSON.stringify(updated));
       return updated;
     });
+
+    logActivity(`Updated payment status of Order ${orderId} to: "${status}"`);
   };
 
   const updateOrderCourier = (
@@ -1335,6 +1351,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("paws_orders", JSON.stringify(updated));
       return updated;
     });
+
+    logActivity(`Dispatched Order ${orderId} via ${courier} (Tracking: ${trackingNumber})`);
   };
 
   const placeOrder = (

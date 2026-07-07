@@ -12,7 +12,25 @@ interface PageProps {
 export default function CustomerDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { id } = use(params);
-  const { customers, orders, updateCustomerStatus } = useShop();
+  const { customers, orders, updateCustomerStatus, activeStaff } = useShop();
+
+  if (activeStaff?.role === "Support") {
+    return (
+      <div className="min-h-screen bg-brand-beige flex items-center justify-center p-4 text-center font-sans">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-brand-beige-dark shadow-sm space-y-4">
+          <span className="text-4xl">⚠️</span>
+          <h3 className="text-lg font-black text-brand-charcoal">অ্যাক্সেস অস্বীকৃত (Access Denied)</h3>
+          <p className="text-xs text-stone-500">গ্রাহক প্রোফাইল দেখার ক্ষমতা আপনার রোলের নেই। শুধুমাত্র সুপার এডমিন এবং ম্যানেজার এই পৃষ্ঠাটি অ্যাক্সেস করতে পারেন।</p>
+          <Link
+            href="/admin"
+            className="inline-block bg-brand-forest hover:bg-brand-forest/90 text-brand-beige py-2.5 px-6 rounded-xl font-bold text-xs"
+          >
+            এডমিন ড্যাশবোর্ডে ফিরে যান
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Find customer
   const customer = customers.find((c) => c.id === id);

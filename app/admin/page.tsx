@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useShop } from "@/context/ShopContext";
 import { Product, Order } from "@/types";
 
-type TabType = "dashboard" | "products" | "orders" | "bundles" | "audit_logs";
+type TabType = "dashboard" | "products" | "orders" | "bundles" | "audit_logs" | "staff";
 
 export default function AdminDashboard() {
   const { 
@@ -20,11 +20,48 @@ export default function AdminDashboard() {
     refundLogs,
     initiateRefund,
     updateOrderPayment,
-    updateOrderCourier
+    updateOrderCourier,
+    activeStaff,
+    staffList,
+    staffLogs,
+    addStaff
   } = useShop();
   
+  // Allowed Navigation Tabs based on Staff Role
+  const allowedTabs = useMemo(() => {
+    const role = activeStaff?.role || "Support";
+    if (role === "Super Admin") {
+      return [
+        { id: "dashboard" as const, label: "📊 ড্যাশবোর্ড", desc: "স্টোর অ্যানালিটিক্স" },
+        { id: "products" as const, label: "📦 পণ্য CRUD", desc: "পণ্য তালিকা ও সংযোজন" },
+        { id: "orders" as const, label: "📋 অর্ডার ম্যানেজার", desc: "গ্রাহক অর্ডার ও স্ট্যাটাস" },
+        { id: "bundles" as const, label: "🏷️ বান্ডেল অফার", desc: "সক্রিয় কম্বো সমূহ" },
+        { id: "audit_logs" as const, label: "🪵 স্টক লগস", desc: "স্টক অডিট হিস্ট্রি" },
+        { id: "staff" as const, label: "👥 স্টাফ ও রোলস", desc: "স্টাফ অ্যাকাউন্ট ও লগস" },
+      ];
+    }
+    if (role === "Manager") {
+      return [
+        { id: "dashboard" as const, label: "📊 ড্যাশবোর্ড", desc: "স্টোর অ্যানালিটিক্স" },
+        { id: "products" as const, label: "📦 পণ্য CRUD", desc: "পণ্য তালিকা ও সংযোজন" },
+        { id: "orders" as const, label: "📋 অর্ডার ম্যানেজার", desc: "গ্রাহক অর্ডার ও স্ট্যাটাস" },
+        { id: "audit_logs" as const, label: "🪵 স্টক লগস", desc: "স্টক অডিট হিস্ট্রি" },
+      ];
+    }
+    // Support
+    return [
+      { id: "orders" as const, label: "📋 অর্ডার ম্যানেজার", desc: "গ্রাহক অর্ডার ও স্ট্যাটাস" },
+    ];
+  }, [activeStaff]);
+
   // Navigation Tabs state
-  const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+  const [activeTab, setActiveTab] = useState<TabType>("orders");
+
+  useEffect(() => {
+    if (allowedTabs.length > 0 && !allowedTabs.some(t => t.id === activeTab)) {
+      setActiveTab(allowedTabs[0].id);
+    }
+  }, [allowedTabs, activeTab]);
 
   // Order Details Modal and refund states
   const [activeOrderModal, setActiveOrderModal] = useState<Order | null>(null);
@@ -32,6 +69,12 @@ export default function AdminDashboard() {
   const [refundReasonInput, setRefundReasonInput] = useState("");
   const [refundMethodInput, setRefundMethodInput] = useState("bkash");
   const [showRefundForm, setShowRefundForm] = useState(false);
+
+  // Staff Management State
+  const [newStaffName, setNewStaffName] = useState("");
+  const [newStaffEmail, setNewStaffEmail] = useState("");
+  const [newStaffPassword, setNewStaffPassword] = useState("");
+  const [newStaffRole, setNewStaffRole] = useState<"Super Admin" | "Manager" | "Support">("Support");
 
   const [courierInput, setCourierInput] = useState<"Pathao" | "RedX" | "Steadfast" | "Own delivery">("Pathao");
   const [trackingInput, setTrackingInput] = useState("");
@@ -435,13 +478,7 @@ export default function AdminDashboard() {
             >
               🏠 লাইভ শপ ↗
             </a>
-            {[
-              { id: "dashboard", label: "📊 ড্যাশবোর্ড", desc: "স্টোর অ্যানালিটিক্স" },
-              { id: "products", label: "📦 পণ্য CRUD", desc: "পণ্য তালিকা ও সংযোজন" },
-              { id: "orders", label: "📋 অর্ডার ম্যানেজার", desc: "গ্রাহক অর্ডার ও স্ট্যাটাস" },
-              { id: "bundles", label: "🏷️ বান্ডেল অফার", desc: "সক্রিয় কম্বো সমূহ" },
-              { id: "audit_logs", label: "🪵 স্টক লগস", desc: "স্টক অডিট হিস্ট্রি" },
-            ].map((tab) => (
+            {allowedTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
@@ -454,30 +491,38 @@ export default function AdminDashboard() {
                 {tab.label}
               </button>
             ))}
-            <Link
-              href="/admin/customers"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
-            >
-              👥 গ্রাহক তালিকা
-            </Link>
-            <Link
-              href="/admin/coupons"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
-            >
-              🏷️ কুপন ও প্রোমো
-            </Link>
-            <Link
-              href="/admin/reviews"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
-            >
-              💬 রিভিউ মডারেটর
-            </Link>
-            <Link
-              href="/admin/settings"
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
-            >
-              ⚙️ সেটিংস ও চার্জ
-            </Link>
+            {(activeStaff?.role === "Super Admin" || activeStaff?.role === "Manager") && (
+              <Link
+                href="/admin/customers"
+                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
+              >
+                👥 গ্রাহক তালিকা
+              </Link>
+            )}
+            {activeStaff?.role === "Super Admin" && (
+              <Link
+                href="/admin/coupons"
+                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
+              >
+                🏷️ কুপন ও প্রোমো
+              </Link>
+            )}
+            {(activeStaff?.role === "Super Admin" || activeStaff?.role === "Manager") && (
+              <Link
+                href="/admin/reviews"
+                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
+              >
+                💬 রিভিউ মডারেটর
+              </Link>
+            )}
+            {activeStaff?.role === "Super Admin" && (
+              <Link
+                href="/admin/settings"
+                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
+              >
+                ⚙️ সেটিংস ও চার্জ
+              </Link>
+            )}
           </nav>
         </div>
       </section>
@@ -1688,6 +1733,191 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* TAB 6: STAFF & ROLES */}
+        {activeTab === "staff" && activeStaff?.role === "Super Admin" && (
+          <div className="space-y-8 animate-fadeIn">
+            
+            <div className="border-b border-brand-beige-dark pb-4">
+              <h3 className="text-base font-bold text-brand-charcoal">স্টাফ ও রোলস ম্যানেজমেন্ট (Staff & Roles Management)</h3>
+              <p className="text-xs text-stone-500 font-light mt-0.5">নতুন স্টাফ যুক্ত করুন, রোল নির্ধারণ করুন এবং তাদের কার্যক্রমের অডিট হিস্ট্রি দেখুন</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              
+              {/* Add Staff Form Card */}
+              <div className="bg-white rounded-3xl border border-brand-beige-dark shadow-sm p-6 space-y-4">
+                <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">নতুন স্টাফ মেম্বার যুক্ত করুন</h4>
+                
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!newStaffName.trim() || !newStaffEmail.trim() || !newStaffPassword.trim()) {
+                      alert("⚠️ অনুগ্রহ করে সকল ইনপুট ফিল্ড পূরণ করুন।");
+                      return;
+                    }
+                    addStaff(newStaffName.trim(), newStaffEmail.trim(), newStaffRole, newStaffPassword);
+                    alert("✓ স্টাফ মেম্বার সফলভাবে যুক্ত করা হয়েছে!");
+                    setNewStaffName("");
+                    setNewStaffEmail("");
+                    setNewStaffPassword("");
+                    setNewStaffRole("Support");
+                  }}
+                  className="space-y-4 text-xs"
+                >
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">পূর্ণ নাম</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="যেমন: আরিয়ান হোসাইন"
+                      value={newStaffName}
+                      onChange={(e) => setNewStaffName(e.target.value)}
+                      className="w-full bg-brand-beige border border-brand-beige-dark rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-brand-forest transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">ইমেইল অ্যাড্রেস</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="aroyan@paws.co"
+                      value={newStaffEmail}
+                      onChange={(e) => setNewStaffEmail(e.target.value)}
+                      className="w-full bg-brand-beige border border-brand-beige-dark rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-brand-forest transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">লগইন পাসওয়ার্ড</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••"
+                      value={newStaffPassword}
+                      onChange={(e) => setNewStaffPassword(e.target.value)}
+                      className="w-full bg-brand-beige border border-brand-beige-dark rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-brand-forest transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">রোলে সিলেক্ট (Select Role)</label>
+                    <select
+                      value={newStaffRole}
+                      onChange={(e) => setNewStaffRole(e.target.value as any)}
+                      className="w-full bg-brand-beige border border-brand-beige-dark rounded-xl py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-brand-forest transition-all font-semibold"
+                    >
+                      <option value="Support">Support (অর্ডার আপডেট ও রিড-অনলি)</option>
+                      <option value="Manager">Manager (পণ্য, অর্ডার, কাস্টমার অ্যাক্সেস)</option>
+                      <option value="Super Admin">Super Admin (সম্পূর্ণ অ্যাক্সেস)</option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-brand-forest hover:bg-brand-forest/90 text-brand-beige py-3 rounded-xl font-bold uppercase tracking-wider transition-all cursor-pointer mt-2"
+                  >
+                    যুক্ত করুন +
+                  </button>
+                </form>
+              </div>
+
+              {/* Staff list directory */}
+              <div className="lg:col-span-2 bg-white rounded-3xl border border-brand-beige-dark shadow-sm p-6 space-y-4">
+                <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">সক্রিয় স্টাফ ডিরেক্টরি ({staffList.length})</h4>
+                
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-brand-beige-dark text-xs">
+                    <thead className="bg-brand-beige">
+                      <tr className="text-left text-[10px] font-semibold text-stone-500 uppercase tracking-wider">
+                        <th className="py-2.5 px-4">নাম</th>
+                        <th className="py-2.5 px-4">ইমেইল</th>
+                        <th className="py-2.5 px-4">রোল</th>
+                        <th className="py-2.5 px-4">যোগদানের তারিখ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-brand-beige-dark bg-white">
+                      {staffList.map((s) => (
+                        <tr key={s.id} className="hover:bg-brand-beige/25">
+                          <td className="py-3 px-4 font-bold text-brand-charcoal">{s.name}</td>
+                          <td className="py-3 px-4 text-stone-500">{s.email}</td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-bold ${
+                              s.role === "Super Admin"
+                                ? "bg-purple-50 text-purple-700 border border-purple-100"
+                                : s.role === "Manager"
+                                ? "bg-blue-50 text-blue-700 border border-blue-100"
+                                : "bg-amber-50 text-amber-700 border border-amber-100"
+                            }`}>
+                              {s.role}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-stone-400">
+                            {new Date(s.createdAt).toLocaleDateString("bn-BD")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Staff Activity Audit Logs Table */}
+            <div className="bg-white rounded-3xl border border-brand-beige-dark shadow-sm p-6 space-y-4">
+              <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">স্টাফ এক্টিভিটি লগস (Audit Trail Logs)</h4>
+              
+              <div className="overflow-x-auto font-sans">
+                <table className="min-w-full divide-y divide-brand-beige-dark text-xs">
+                  <thead className="bg-brand-beige">
+                    <tr className="text-left text-[10px] font-semibold text-stone-500 uppercase tracking-wider">
+                      <th className="py-2.5 px-4">সময় ও তারিখ</th>
+                      <th className="py-2.5 px-4">স্টাফ মেম্বার</th>
+                      <th className="py-2.5 px-4">রোল</th>
+                      <th className="py-2.5 px-4">সম্পাদিত কাজ (Action Performed)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-brand-beige-dark bg-white font-medium">
+                    {staffLogs && staffLogs.length > 0 ? (
+                      staffLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-brand-beige/25">
+                          <td className="py-3 px-4 text-stone-400 whitespace-nowrap">
+                            {new Date(log.createdAt).toLocaleString("bn-BD")}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-brand-charcoal">
+                            {log.staffName}
+                            <span className="text-[10px] text-stone-400 font-normal block">{log.staffEmail}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                              log.staffRole === "Super Admin"
+                                ? "bg-purple-50 text-purple-700"
+                                : log.staffRole === "Manager"
+                                ? "bg-blue-50 text-blue-700"
+                                : "bg-amber-50 text-amber-700"
+                            }`}>
+                              {log.staffRole}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-stone-600 font-semibold">{log.action}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-8 text-center text-stone-400">
+                          কোনো স্টাফ এক্টিভিটি রেকর্ড পাওয়া যায়নি।
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        )}
+
         {/* Order Details Modal Overlay */}
         {activeOrderModal && (() => {
           const liveOrder = orders.find(o => o.id === activeOrderModal.id) || activeOrderModal;
@@ -1777,42 +2007,51 @@ export default function AdminDashboard() {
                     {/* Payment Control */}
                     <div className="bg-white rounded-2xl border border-brand-beige-dark p-5 shadow-xs space-y-3">
                       <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">পেমেন্ট ট্র্যাকিং</h4>
-                      
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-stone-400 block">পেমেন্ট স্ট্যাটাস</label>
-                          <select
-                            value={paymentStatusInput}
-                            onChange={(e) => setPaymentStatusInput(e.target.value as any)}
-                            className="w-full bg-brand-beige border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
-                          >
-                            <option value="Paid">Paid</option>
-                            <option value="Unpaid">Unpaid</option>
-                            <option value="Partial">Partial</option>
-                          </select>
+                      {activeStaff?.role === "Support" ? (
+                        <div className="text-xs space-y-2.5 font-bold text-stone-700">
+                          <p>পেমেন্ট স্ট্যাটাস: <span className="text-brand-charcoal">{liveOrder.paymentStatus}</span></p>
+                          <p>ট্রানজেকশন আইডি: <span className="text-brand-charcoal font-mono">{liveOrder.transactionId || "N/A"}</span></p>
+                          <span className="text-[10px] text-amber-600 block bg-amber-50 px-2 py-1 rounded">⚠️ পেমেন্ট রেকর্ড পরিমার্জনার অ্যাক্সেস আপনার রোলের নেই।</span>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-stone-400 block">ট্রানজেকশন আইডি (Txn ID)</label>
-                          <input
-                            type="text"
-                            placeholder="যেমন: TRX92834"
-                            value={transactionIdInput}
-                            onChange={(e) => setTransactionIdInput(e.target.value)}
-                            className="w-full bg-brand-beige border border-brand-beige-dark rounded-lg p-2 focus:outline-none uppercase font-mono font-semibold"
-                          />
-                        </div>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-stone-400 block">পেমেন্ট স্ট্যাটাস</label>
+                              <select
+                                value={paymentStatusInput}
+                                onChange={(e) => setPaymentStatusInput(e.target.value as any)}
+                                className="w-full bg-brand-beige border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                              >
+                                <option value="Paid">Paid</option>
+                                <option value="Unpaid">Unpaid</option>
+                                <option value="Partial">Partial</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-stone-400 block">ট্রানজেকশন আইডি (Txn ID)</label>
+                              <input
+                                type="text"
+                                placeholder="যেমন: TRX92834"
+                                value={transactionIdInput}
+                                onChange={(e) => setTransactionIdInput(e.target.value)}
+                                className="w-full bg-brand-beige border border-brand-beige-dark rounded-lg p-2 focus:outline-none uppercase font-mono font-semibold"
+                              />
+                            </div>
+                          </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateOrderPayment(liveOrder.id, paymentStatusInput, transactionIdInput);
-                          alert("✓ পেমেন্ট রেকর্ড সফলভাবে আপডেট করা হয়েছে!");
-                        }}
-                        className="w-full bg-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 text-xs py-2 rounded-lg font-bold transition-colors cursor-pointer"
-                      >
-                        পেমেন্ট রেকর্ড আপডেট করুন
-                      </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateOrderPayment(liveOrder.id, paymentStatusInput, transactionIdInput);
+                              alert("✓ পেমেন্ট রেকর্ড সফলভাবে আপডেট করা হয়েছে!");
+                            }}
+                            className="w-full bg-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 text-xs py-2 rounded-lg font-bold transition-colors cursor-pointer"
+                          >
+                            পেমেন্ট রেকর্ড আপডেট করুন
+                          </button>
+                        </>
+                      )}
                     </div>
 
                     {/* Courier Control */}
@@ -1862,100 +2101,102 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Refund initiator control */}
-                    <div className="bg-white rounded-2xl border border-brand-beige-dark p-5 shadow-xs space-y-3">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">রিফান্ড মডারেটর</h4>
-                        {liveOrder.refundStatus ? (
-                          <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">
-                            {liveOrder.refundStatus}
-                          </span>
+                    {activeStaff?.role !== "Support" && (
+                      <div className="bg-white rounded-2xl border border-brand-beige-dark p-5 shadow-xs space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">রিফান্ড মডারেটর</h4>
+                          {liveOrder.refundStatus ? (
+                            <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">
+                              {liveOrder.refundStatus}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-stone-400 font-light">কোনো রিফান্ড অ্যাকশন নেই</span>
+                          )}
+                        </div>
+
+                        {!showRefundForm ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowRefundForm(true);
+                              setRefundAmountInput(liveOrder.grandTotal.toString());
+                            }}
+                            className="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs py-2 rounded-lg font-bold transition-colors cursor-pointer"
+                          >
+                            💸 রিফান্ড ইস্যু করুন (Refund Initiate)
+                          </button>
                         ) : (
-                          <span className="text-[10px] text-stone-400 font-light">কোনো রিফান্ড অ্যাকশন নেই</span>
+                          <div className="border border-red-200 bg-red-50/20 p-4 rounded-xl space-y-3 text-xs animate-slideDown">
+                            <h5 className="font-bold text-red-700 text-[11px]">নতুন রিফান্ড ইস্যু ফর্ম</h5>
+                            
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড পরিমাণ (৳)</label>
+                              <input
+                                type="number"
+                                value={refundAmountInput}
+                                onChange={(e) => setRefundAmountInput(e.target.value)}
+                                className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড মাধ্যম</label>
+                              <select
+                                value={refundMethodInput}
+                                onChange={(e) => setRefundMethodInput(e.target.value)}
+                                className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                              >
+                                <option value="bkash">bKash</option>
+                                <option value="nagad">Nagad</option>
+                                <option value="card">Card</option>
+                                <option value="cash">Cash (COD)</option>
+                              </select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড কারণ</label>
+                              <textarea
+                                rows={2}
+                                placeholder="রিফান্ড ইস্যু করার কারণ লিখুন..."
+                                value={refundReasonInput}
+                                onChange={(e) => setRefundReasonInput(e.target.value)}
+                                className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                              />
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const amount = Number(refundAmountInput);
+                                  if (isNaN(amount) || amount <= 0) {
+                                    alert("⚠️ অনুগ্রহ করে সঠিক পরিমাণ টাকা ইনপুট করুন।");
+                                    return;
+                                  }
+                                  if (!refundReasonInput.trim()) {
+                                    alert("⚠️ রিফান্ড ইস্যু করার কারণ অবশ্যই লিখতে হবে।");
+                                    return;
+                                  }
+                                  initiateRefund(liveOrder.id, amount, refundMethodInput, refundReasonInput.trim());
+                                  alert("✓ রিফান্ড ইস্যু সফল হয়েছে!");
+                                  setShowRefundForm(false);
+                                }}
+                                className="flex-1 bg-red-650 hover:bg-red-750 bg-red-600 text-brand-beige py-2 rounded-lg font-bold text-center text-xs transition-colors cursor-pointer"
+                              >
+                                কনফার্ম রিফান্ড
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowRefundForm(false)}
+                                className="bg-stone-200 text-brand-charcoal hover:bg-stone-300 py-2 px-4 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                              >
+                                বাতিল
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
-
-                      {!showRefundForm ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowRefundForm(true);
-                            setRefundAmountInput(liveOrder.grandTotal.toString());
-                          }}
-                          className="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs py-2 rounded-lg font-bold transition-colors cursor-pointer"
-                        >
-                          💸 রিফান্ড ইস্যু করুন (Refund Initiate)
-                        </button>
-                      ) : (
-                        <div className="border border-red-200 bg-red-50/20 p-4 rounded-xl space-y-3 text-xs animate-slideDown">
-                          <h5 className="font-bold text-red-700 text-[11px]">নতুন রিফান্ড ইস্যু ফর্ম</h5>
-                          
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড পরিমাণ (৳)</label>
-                            <input
-                              type="number"
-                              value={refundAmountInput}
-                              onChange={(e) => setRefundAmountInput(e.target.value)}
-                              className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড মাধ্যম</label>
-                            <select
-                              value={refundMethodInput}
-                              onChange={(e) => setRefundMethodInput(e.target.value)}
-                              className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
-                            >
-                              <option value="bkash">bKash</option>
-                              <option value="nagad">Nagad</option>
-                              <option value="card">Card</option>
-                              <option value="cash">Cash (COD)</option>
-                            </select>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড কারণ</label>
-                            <textarea
-                              rows={2}
-                              placeholder="রিফান্ড ইস্যু করার কারণ লিখুন..."
-                              value={refundReasonInput}
-                              onChange={(e) => setRefundReasonInput(e.target.value)}
-                              className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
-                            />
-                          </div>
-
-                          <div className="flex gap-2 pt-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const amount = Number(refundAmountInput);
-                                if (isNaN(amount) || amount <= 0) {
-                                  alert("⚠️ অনুগ্রহ করে সঠিক পরিমাণ টাকা ইনপুট করুন।");
-                                  return;
-                                }
-                                if (!refundReasonInput.trim()) {
-                                  alert("⚠️ রিফান্ড ইস্যু করার কারণ অবশ্যই লিখতে হবে।");
-                                  return;
-                                }
-                                initiateRefund(liveOrder.id, amount, refundMethodInput, refundReasonInput.trim());
-                                alert("✓ রিফান্ড ইস্যু সফল হয়েছে!");
-                                setShowRefundForm(false);
-                              }}
-                              className="flex-1 bg-red-650 hover:bg-red-750 bg-red-600 text-brand-beige py-2 rounded-lg font-bold text-center text-xs transition-colors cursor-pointer"
-                            >
-                              কনফার্ম রিফান্ড
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowRefundForm(false)}
-                              className="bg-stone-200 text-brand-charcoal hover:bg-stone-300 py-2 px-4 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
-                            >
-                              বাতিল
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    )}
 
                   </div>
 

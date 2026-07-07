@@ -12,8 +12,27 @@ export default function AdminCouponsPage() {
     addCoupon,
     toggleCouponStatus,
     deleteCoupon,
-    products
+    products,
+    activeStaff
   } = useShop();
+
+  if (activeStaff?.role !== "Super Admin") {
+    return (
+      <div className="min-h-screen bg-brand-beige flex items-center justify-center p-4 text-center font-sans">
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl border border-brand-beige-dark shadow-sm space-y-4">
+          <span className="text-4xl">⚠️</span>
+          <h3 className="text-lg font-black text-brand-charcoal">অ্যাক্সেস অস্বীকৃত (Access Denied)</h3>
+          <p className="text-xs text-stone-500">এই পৃষ্ঠাটি দেখার জন্য আপনার পর্যাপ্ত অনুমতি নেই। শুধুমাত্র সুপার এডমিন এই পৃষ্ঠাটি অ্যাক্সেস করতে পারেন।</p>
+          <Link
+            href="/admin"
+            className="inline-block bg-brand-forest hover:bg-brand-forest/90 text-brand-beige py-2.5 px-6 rounded-xl font-bold text-xs"
+          >
+            এডমিন ড্যাশবোর্ডে ফিরে যান
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Coupon Creation Form States
   const [showAddForm, setShowAddForm] = useState(false);

@@ -1,53 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import { useShop } from "@/context/ShopContext";
 
 interface AdminSecurityWrapperProps {
   children: React.ReactNode;
 }
 
 export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { activeStaff, loginStaff, logoutStaff } = useShop();
+  const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-
-  useEffect(() => {
-    const storedAuth = localStorage.getItem("paws_admin_authenticated");
-    if (storedAuth === "true") {
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
-  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
-    if (password === "admin123" || password === "paws2026") {
-      setIsAuthenticated(true);
-      localStorage.setItem("paws_admin_authenticated", "true");
-    } else {
-      setErrorMsg("⚠️ ভুল পাসকোড! দয়া করে সঠিক পাসকোডটি দিন।");
+    const success = loginStaff(email, password);
+    if (!success) {
+      setErrorMsg("⚠️ ভুল ইমেইল বা পাসওয়ার্ড! সঠিক বিবরণী দিন।");
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem("paws_admin_authenticated");
-  };
-
-  if (loading) {
-    return (
-      <div className="bg-brand-beige min-h-screen flex items-center justify-center font-sans">
-        <div className="w-12 h-12 rounded-full border-4 border-brand-forest border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
+  if (!activeStaff) {
     return (
       <div className="bg-brand-charcoal min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 font-sans antialiased relative overflow-hidden">
         {/* Background gradient blur blobs */}
@@ -57,27 +35,39 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
         <div className="max-w-md w-full space-y-8 bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl relative z-10">
           <div className="text-center space-y-2">
             <span className="text-4xl block animate-bounce">🔒</span>
-            <h2 className="text-2xl font-black text-brand-beige tracking-tight">এডমিন প্যানেল অ্যাক্সেস লক</h2>
-            <p className="text-xs text-stone-400 font-light">এই প্যানেলটি শুধুমাত্র অথরাইজড এডমিনদের ব্যবহারের জন্য সংরক্ষিত</p>
+            <h2 className="text-2xl font-black text-brand-beige tracking-tight">স্টাফ লগইন পোর্টাল (Staff Login)</h2>
+            <p className="text-xs text-stone-400 font-light font-semibold">এডমিন প্যানেলে অ্যাক্সেস করার জন্য স্টাফ অ্যাকাউন্ট দিয়ে লগইন করুন</p>
           </div>
 
           {errorMsg && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-300 p-3.5 rounded-xl text-xs text-center font-semibold">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-300 p-3.5 rounded-xl text-xs text-center font-semibold animate-shake">
               {errorMsg}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">ইমেইল অ্যাড্রেস (Email Address)</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="staff@paws.co"
+                className="w-full bg-white/5 border border-white/10 text-brand-beige rounded-xl py-3 px-4 text-xs focus:outline-none focus:ring-1 focus:ring-brand-forest placeholder-stone-600 transition-all font-sans"
+              />
+            </div>
+
             <div className="space-y-1.5 relative">
-              <label className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">এডমিন পাসকোড</label>
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">পাসওয়ার্ড (Password)</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="পাসকোড দিন..."
-                  className="w-full bg-white/5 border border-white/10 text-brand-beige rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-brand-forest placeholder-stone-600 transition-all font-sans"
+                  placeholder="••••••••"
+                  className="w-full bg-white/5 border border-white/10 text-brand-beige rounded-xl py-3 px-4 text-xs focus:outline-none focus:ring-1 focus:ring-brand-forest placeholder-stone-600 transition-all font-sans"
                 />
                 <button
                   type="button"
@@ -87,16 +77,28 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
                   {showPassword ? "🙈 লুকান" : "👁️ দেখুন"}
                 </button>
               </div>
-              <span className="text-[10px] text-stone-500 font-light block">ডিফল্ট পাসকোড: <code className="bg-white/15 px-1 py-0.5 rounded text-stone-300 font-sans">admin123</code></span>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-brand-forest hover:bg-brand-forest/90 text-brand-beige py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:shadow-lg hover:shadow-brand-forest/20 cursor-pointer"
+              className="w-full bg-brand-forest hover:bg-brand-forest/90 text-brand-beige py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:shadow-lg hover:shadow-brand-forest/20 cursor-pointer mt-2"
             >
-              আনলক করুন 🔓
+              লগইন করুন 🔓
             </button>
           </form>
+
+          {/* Seeding guide for demo convenience */}
+          <div className="bg-white/5 border border-white/5 rounded-2xl p-4 text-[10px] space-y-1.5 text-stone-400 font-sans border-t border-white/10">
+            <p className="font-bold text-brand-beige text-center">টেস্ট একাউন্ট লগইন বিবরণী (Demo Accounts):</p>
+            <div className="grid grid-cols-2 gap-1 text-stone-300">
+              <span>Super Admin:</span>
+              <span className="font-semibold text-brand-beige">admin@paws.co / admin123</span>
+              <span>Manager:</span>
+              <span className="font-semibold text-brand-beige">manager@paws.co / manager123</span>
+              <span>Support:</span>
+              <span className="font-semibold text-brand-beige">support@paws.co / support123</span>
+            </div>
+          </div>
 
           <div className="text-center pt-2">
             <Link
@@ -114,12 +116,16 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
   return (
     <>
       {/* Floating Logout Button at bottom-right corner */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
+        <div className="bg-brand-charcoal text-brand-beige border border-brand-beige-dark/20 text-[10px] font-bold rounded-full py-1.5 px-3 shadow-md flex items-center gap-1.5 backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span>{activeStaff.name} ({activeStaff.role})</span>
+        </div>
         <button
-          onClick={handleLogout}
+          onClick={logoutStaff}
           type="button"
-          className="bg-red-700 hover:bg-red-800 text-white rounded-full p-3.5 shadow-lg border border-red-800 hover:shadow-xl transition-all flex items-center justify-center cursor-pointer"
-          title="এডমিন লগআউট করুন"
+          className="bg-red-750 hover:bg-red-800 bg-red-700 text-white rounded-full p-3 shadow-lg border border-red-800 hover:shadow-xl transition-all flex items-center justify-center cursor-pointer"
+          title="লগআউট করুন"
         >
           🚪
         </button>
