@@ -1,4 +1,4 @@
-import { Customer, Order, Coupon, CouponUsage } from "@/types";
+import { Customer, Order, Coupon, CouponUsage, Review, ShippingSettings, RefundLog } from "@/types";
 
 // In-memory mock database for server-side API routes
 let customers: Customer[] = [
@@ -207,6 +207,86 @@ let couponUsageLogs: CouponUsage[] = [
   }
 ];
 
+let reviews: Review[] = [
+  {
+    id: "rev-1",
+    productId: "prod-1",
+    productName: "Premium Leather Cat Collar",
+    customerName: "নিয়ামুল হাসান",
+    customerPhone: "01712345678",
+    rating: 5,
+    comment: "চমৎকার কলার! কোয়ালিটি অনেক ভালো এবং বিড়ালের গলায় সুন্দর মানিয়েছে। অত্যন্ত সন্তুষ্ট!",
+    status: "approved",
+    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "rev-2",
+    productId: "prod-2",
+    productName: "Grain-Free Salmon & Chicken Cat Dry Food",
+    customerName: "নাবিলা রহমান",
+    customerPhone: "01898765432",
+    rating: 4,
+    comment: "আমার বিড়াল খাবারটি খুব পছন্দ করেছে। হজমে কোনো সমস্যা হয়নি। ডেলিভারিও ফাস্ট ছিল।",
+    status: "approved",
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "rev-3",
+    productId: "prod-3",
+    productName: "Ultra Odor-Control Silica Gel Cat Litter",
+    customerName: "কাজী আশিক",
+    customerPhone: "01511223344",
+    rating: 5,
+    comment: "সত্যিই অসাধারণ গন্ধ নিয়ন্ত্রণ করে! ঘর একদম ফ্রেশ থাকে। সবাই নিতে পারেন।",
+    photoUrl: "https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=500&auto=format&fit=crop",
+    status: "pending",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "rev-4",
+    productId: "prod-4",
+    productName: "Ergonomic Retractable Cat Leash",
+    customerName: "তানভীর আহমেদ",
+    customerPhone: "01988776655",
+    rating: 2,
+    comment: "বেল্টটি একটু ভারী এবং রিলিজ বাটন কাজ করতে একটু সমস্যা করছে। আশা করি ইম্প্রুভ করবেন।",
+    status: "pending",
+    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "rev-5",
+    productId: "prod-6",
+    productName: "Stainless Steel Bird Water Fountain",
+    customerName: "সাদিয়া ইসলাম",
+    customerPhone: "01799887766",
+    rating: 1,
+    comment: "আজব প্রোডাক্ট! এটি পাখি কেনার বিজ্ঞাপন ছাড়া আর কিছুই না। ভুলেও কেউ কিনবেন না।",
+    status: "rejected",
+    rejectReason: "বিজ্ঞাপন এবং অপ্রাসঙ্গিক মন্তব্য।",
+    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
+let shippingSettings: ShippingSettings = {
+  insideDhakaCharge: 60,
+  outsideDhakaCharge: 120,
+  subAreaCharge: 90,
+  freeShippingThreshold: 3000
+};
+
+let refundLogs: RefundLog[] = [
+  {
+    id: "ref-1",
+    orderId: "ORD-9304",
+    customerName: "তাহমিদ হাসান",
+    customerPhone: "01898765432",
+    refundAmount: 500,
+    refundMethod: "bkash",
+    refundReason: "অর্ডারকৃত আইটেম ত্রুটিপূর্ণ ছিল এবং ফেরত দেওয়া হয়েছে।",
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
 export const db = {
   getCustomers: (
     search?: string,
@@ -316,5 +396,59 @@ export const db = {
 
   getCouponUsageLogs: () => {
     return couponUsageLogs;
+  },
+
+  getReviews: () => {
+    return reviews;
+  },
+
+  updateReviewStatus: (id: string, status: "approved" | "rejected", rejectReason?: string) => {
+    const index = reviews.findIndex(r => r.id === id);
+    if (index > -1) {
+      reviews[index] = {
+        ...reviews[index],
+        status,
+        rejectReason: status === "rejected" ? rejectReason : undefined
+      };
+      return reviews[index];
+    }
+    return null;
+  },
+
+  bulkUpdateReviews: (ids: string[], status: "approved" | "rejected", rejectReason?: string) => {
+    reviews = reviews.map(r => {
+      if (ids.includes(r.id)) {
+        return {
+          ...r,
+          status,
+          rejectReason: status === "rejected" ? rejectReason : undefined
+        };
+      }
+      return r;
+    });
+    return true;
+  },
+
+  getShippingSettings: () => {
+    return shippingSettings;
+  },
+
+  updateShippingSettings: (settings: ShippingSettings) => {
+    shippingSettings = settings;
+    return shippingSettings;
+  },
+
+  getRefundLogs: () => {
+    return refundLogs;
+  },
+
+  addRefundLog: (log: Omit<RefundLog, "id" | "createdAt">) => {
+    const newLog: RefundLog = {
+      ...log,
+      id: `ref-${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    refundLogs = [newLog, ...refundLogs];
+    return newLog;
   },
 };

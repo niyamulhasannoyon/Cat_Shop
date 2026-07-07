@@ -7,10 +7,13 @@ import { Product } from "@/types";
 
 function ProductsCatalogContent() {
   const searchParams = useSearchParams();
-  const { addToCart, products } = useShop();
+  const { addToCart, products, reviews, orders } = useShop();
   
   // Track selected variants for each product
   const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: string }>({});
+  
+  // Review Modal State
+  const [selectedReviewProduct, setSelectedReviewProduct] = useState<Product | null>(null);
 
   // Search parameters states
   const categoryParam = searchParams.get("cat") || "";
@@ -210,6 +213,30 @@ function ProductsCatalogContent() {
                           {product.name}
                         </h3>
 
+                        {/* Rating Summary Link */}
+                        {(() => {
+                          const prodReviews = reviews.filter(r => r.productId === product.id && r.status === "approved");
+                          const reviewCount = prodReviews.length;
+                          const avgRating = reviewCount > 0 
+                            ? (prodReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1) 
+                            : "0.0";
+                          const starsNum = Math.round(Number(avgRating));
+
+                          return (
+                            <button
+                              onClick={() => setSelectedReviewProduct(product)}
+                              className="mt-1 flex items-center gap-1 text-[11px] text-stone-500 hover:text-brand-forest transition-colors font-medium focus:outline-none cursor-pointer"
+                            >
+                              <div className="flex text-amber-400">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <span key={i}>{i < starsNum ? "★" : "☆"}</span>
+                                ))}
+                              </div>
+                              <span>({reviewCount > 0 ? `${avgRating} | ${reviewCount}টি রিভিউ` : "কোনো রিভিউ নেই"})</span>
+                            </button>
+                          );
+                        })()}
+
                         {/* Inventory Badges */}
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {product.stock <= 0 ? (
@@ -305,6 +332,109 @@ function ProductsCatalogContent() {
               </div>
             )}
           </div>
+
+        {/* Reviews Modal Overlay */}
+        {selectedReviewProduct && (
+          <div className="fixed inset-0 bg-brand-charcoal/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+            <div className="bg-white rounded-3xl border border-brand-beige-dark max-w-lg w-full max-h-[85vh] flex flex-col shadow-xl overflow-hidden animate-scaleUp">
+              
+              {/* Modal Header */}
+              <div className="bg-brand-beige border-b border-brand-beige-dark p-5 flex justify-between items-start gap-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-brand-charcoal leading-snug">{selectedReviewProduct.name}</h3>
+                  {(() => {
+                    const prodReviews = reviews.filter(r => r.productId === selectedReviewProduct.id && r.status === "approved");
+                    const avgRating = prodReviews.length > 0 
+                      ? (prodReviews.reduce((sum, r) => sum + r.rating, 0) / prodReviews.length).toFixed(1) 
+                      : "0.0";
+                    const starsNum = Math.round(Number(avgRating));
+
+                    return (
+                      <div className="flex items-center gap-1.5 text-xs text-stone-500 font-semibold">
+                        <div className="flex text-amber-400">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <span key={i}>{i < starsNum ? "★" : "☆"}</span>
+                          ))}
+                        </div>
+                        <span>{avgRating} / ৫.০ ({prodReviews.length}টি রিভিউ)</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <button
+                  onClick={() => setSelectedReviewProduct(null)}
+                  className="bg-stone-200 hover:bg-stone-300 text-brand-charcoal p-1.5 rounded-full text-xs font-bold transition-colors focus:outline-none cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Body: Scrollable Reviews List */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-4 max-h-[50vh]">
+                {(() => {
+                  const prodReviews = reviews.filter(r => r.productId === selectedReviewProduct.id && r.status === "approved");
+                  
+                  if (prodReviews.length === 0) {
+                    return (
+                      <div className="py-8 text-center text-stone-400 space-y-2">
+                        <span className="text-4xl block">💬</span>
+                        <p className="text-xs">এই পণ্যের কোনো রিভিউ অনুমোদিত হয়নি।</p>
+                      </div>
+                    );
+                  }
+
+                  return prodReviews.map((rev) => {
+                    const isVerified = orders.some(o => 
+                      o.customerPhone === rev.customerPhone && 
+                      o.status === "Delivered" && 
+                      o.items.some(item => item.id === selectedReviewProduct.id)
+                    );
+
+                    return (
+                      <div key={rev.id} className="border-b border-brand-beige-dark/60 pb-3.5 space-y-1.5 last:border-b-0 last:pb-0">
+                        <div className="flex justify-between items-start gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-brand-charcoal">{rev.customerName}</span>
+                              {isVerified && (
+                                <span className="text-[9px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200">
+                                  ✓ Verified Purchase
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex text-amber-400 text-[10px] mt-0.5">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <span key={i}>{i < rev.rating ? "★" : "☆"}</span>
+                              ))}
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-stone-400 font-light">{new Date(rev.createdAt).toLocaleDateString("bn-BD")}</span>
+                        </div>
+                        <p className="text-xs text-stone-600 font-light leading-relaxed whitespace-pre-line">{rev.comment}</p>
+                        {rev.photoUrl && (
+                          <div className="mt-2 w-28 h-28 rounded-lg overflow-hidden border border-brand-beige-dark shadow-sm bg-neutral-50">
+                            <img src={rev.photoUrl} alt="Review attachment" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-brand-beige border-t border-brand-beige-dark p-4 text-center">
+                <button
+                  onClick={() => setSelectedReviewProduct(null)}
+                  className="bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-beige px-6 py-2 rounded-full text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                >
+                  বন্ধ করুন
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
 
         </div>
       </div>

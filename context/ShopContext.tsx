@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Product, CartItem, Order, ShopContextType, Customer, Coupon, CouponUsage, StockLog, ProductVariant } from "@/types";
+import { Product, CartItem, Order, ShopContextType, Customer, Coupon, CouponUsage, StockLog, ProductVariant, Review, ShippingSettings, RefundLog } from "@/types";
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
@@ -222,6 +222,9 @@ const INITIAL_ORDERS: Order[] = [
     shippingFee: 60,
     grandTotal: 2960,
     paymentMethod: "cod",
+    paymentStatus: "Paid",
+    courierPartner: "Pathao",
+    trackingNumber: "PATHAO-84920",
     status: "Delivered",
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
@@ -236,7 +239,11 @@ const INITIAL_ORDERS: Order[] = [
     subtotal: 1100,
     shippingFee: 60,
     grandTotal: 1160,
-    paymentMethod: "mfs",
+    paymentMethod: "bkash",
+    paymentStatus: "Paid",
+    transactionId: "BKASH-TXN-9304",
+    courierPartner: "Steadfast",
+    trackingNumber: "STEADFAST-9304",
     status: "Shipped",
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   }
@@ -298,16 +305,99 @@ const INITIAL_COUPON_USAGE: CouponUsage[] = [
   }
 ];
 
+const INITIAL_REVIEWS: Review[] = [
+  {
+    id: "rev-1",
+    productId: "prod-1",
+    productName: "Premium Leather Cat Collar",
+    customerName: "নিয়ামুল হাসান",
+    customerPhone: "01712345678",
+    rating: 5,
+    comment: "চমৎকার কলার! কোয়ালিটি অনেক ভালো এবং বিড়ালের গলায় সুন্দর মানিয়েছে। অত্যন্ত সন্তুষ্ট!",
+    status: "approved",
+    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "rev-2",
+    productId: "prod-2",
+    productName: "Grain-Free Salmon & Chicken Cat Dry Food",
+    customerName: "নাবিলা রহমান",
+    customerPhone: "01898765432",
+    rating: 4,
+    comment: "আমার বিড়াল খাবারটি খুব পছন্দ করেছে। হজমে কোনো সমস্যা হয়নি। ডেলিভারিও ফাস্ট ছিল।",
+    status: "approved",
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "rev-3",
+    productId: "prod-3",
+    productName: "Ultra Odor-Control Silica Gel Cat Litter",
+    customerName: "কাজী আশিক",
+    customerPhone: "01511223344",
+    rating: 5,
+    comment: "সত্যিই অসাধারণ গন্ধ নিয়ন্ত্রণ করে! ঘর একদম ফ্রেশ থাকে। সবাই নিতে পারেন।",
+    photoUrl: "https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=500&auto=format&fit=crop",
+    status: "pending",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "rev-4",
+    productId: "prod-4",
+    productName: "Ergonomic Retractable Cat Leash",
+    customerName: "তানভীর আহমেদ",
+    customerPhone: "01988776655",
+    rating: 2,
+    comment: "বেল্টটি একটু ভারী এবং রিলিজ বাটন কাজ করতে একটু সমস্যা করছে। আশা করি ইম্প্রুভ করবেন।",
+    status: "pending",
+    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "rev-5",
+    productId: "prod-6",
+    productName: "Stainless Steel Bird Water Fountain",
+    customerName: "সাদিয়া ইসলাম",
+    customerPhone: "01799887766",
+    rating: 1,
+    comment: "আজব প্রোডাক্ট! এটি পাখি কেনার বিজ্ঞাপন ছাড়া আর কিছুই না। ভুলেও কেউ কিনবেন না।",
+    status: "rejected",
+    rejectReason: "বিজ্ঞাপন এবং অপ্রাসঙ্গিক মন্তব্য।",
+    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
+const INITIAL_SHIPPING_SETTINGS: ShippingSettings = {
+  insideDhakaCharge: 60,
+  outsideDhakaCharge: 120,
+  subAreaCharge: 90,
+  freeShippingThreshold: 3000
+};
+
+const INITIAL_REFUND_LOGS: RefundLog[] = [
+  {
+    id: "ref-1",
+    orderId: "ORD-9304",
+    customerName: "তাহমিদ হাসান",
+    customerPhone: "01898765432",
+    refundAmount: 500,
+    refundMethod: "bkash",
+    refundReason: "অর্ডারকৃত আইটেম ত্রুটিপূর্ণ ছিল এবং ফেরত দেওয়া হয়েছে।",
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
 export function ShopProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [stockLogs, setStockLogs] = useState<StockLog[]>([]);
+  const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(INITIAL_SHIPPING_SETTINGS);
+  const [refundLogs, setRefundLogs] = useState<RefundLog[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [couponUsageLogs, setCouponUsageLogs] = useState<CouponUsage[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponDiscount, setCouponDiscount] = useState<number>(0);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   // Helper function to log stock changes (defined early so hydration can reference it)
   const logStockChange = (
@@ -380,6 +470,30 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       } else {
         setCouponUsageLogs(INITIAL_COUPON_USAGE);
         localStorage.setItem("paws_coupon_usage", JSON.stringify(INITIAL_COUPON_USAGE));
+      }
+
+      const storedReviews = localStorage.getItem("paws_reviews");
+      if (storedReviews) {
+        setReviews(JSON.parse(storedReviews));
+      } else {
+        setReviews(INITIAL_REVIEWS);
+        localStorage.setItem("paws_reviews", JSON.stringify(INITIAL_REVIEWS));
+      }
+
+      const storedSettings = localStorage.getItem("paws_shipping_settings");
+      if (storedSettings) {
+        setShippingSettings(JSON.parse(storedSettings));
+      } else {
+        setShippingSettings(INITIAL_SHIPPING_SETTINGS);
+        localStorage.setItem("paws_shipping_settings", JSON.stringify(INITIAL_SHIPPING_SETTINGS));
+      }
+
+      const storedRefunds = localStorage.getItem("paws_refund_logs");
+      if (storedRefunds) {
+        setRefundLogs(JSON.parse(storedRefunds));
+      } else {
+        setRefundLogs(INITIAL_REFUND_LOGS);
+        localStorage.setItem("paws_refund_logs", JSON.stringify(INITIAL_REFUND_LOGS));
       }
     } catch (error) {
       console.error("Error reading localStorage keys:", error);
@@ -915,17 +1029,145 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const approveReview = (id: string) => {
+    setReviews(prev => {
+      const updated = prev.map(r => r.id === id ? { ...r, status: "approved" as const } : r);
+      localStorage.setItem("paws_reviews", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const rejectReview = (id: string, reason?: string) => {
+    setReviews(prev => {
+      const updated = prev.map(r => r.id === id ? { ...r, status: "rejected" as const, rejectReason: reason } : r);
+      localStorage.setItem("paws_reviews", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const bulkApproveReviews = (ids: string[]) => {
+    setReviews(prev => {
+      const updated = prev.map(r => ids.includes(r.id) ? { ...r, status: "approved" as const } : r);
+      localStorage.setItem("paws_reviews", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const bulkRejectReviews = (ids: string[], reason?: string) => {
+    setReviews(prev => {
+      const updated = prev.map(r => ids.includes(r.id) ? { ...r, status: "rejected" as const, rejectReason: reason } : r);
+      localStorage.setItem("paws_reviews", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const updateShippingSettings = (settings: ShippingSettings) => {
+    setShippingSettings(settings);
+    localStorage.setItem("paws_shipping_settings", JSON.stringify(settings));
+  };
+
+  const initiateRefund = (orderId: string, amount: number, method: string, reason: string) => {
+    const newRefundLog: RefundLog = {
+      id: `ref-${Date.now()}`,
+      orderId,
+      customerName: "", 
+      customerPhone: "", 
+      refundAmount: amount,
+      refundMethod: method,
+      refundReason: reason,
+      createdAt: new Date().toISOString()
+    };
+
+    setOrders(prev => {
+      const orderIdx = prev.findIndex(o => o.id === orderId);
+      if (orderIdx > -1) {
+        const order = prev[orderIdx];
+        newRefundLog.customerName = order.customerName;
+        newRefundLog.customerPhone = order.customerPhone;
+
+        const updatedOrders = prev.map(o => {
+          if (o.id === orderId) {
+            return {
+              ...o,
+              refundStatus: "Initiated" as const,
+              refundAmount: amount,
+              refundReason: reason,
+              refundMethod: method
+            };
+          }
+          return o;
+        });
+
+        localStorage.setItem("paws_orders", JSON.stringify(updatedOrders));
+        return updatedOrders;
+      }
+      return prev;
+    });
+
+    setRefundLogs(prev => {
+      const updated = [newRefundLog, ...prev];
+      localStorage.setItem("paws_refund_logs", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const updateOrderPayment = (orderId: string, status: "Paid" | "Unpaid" | "Partial", transactionId?: string) => {
+    setOrders(prev => {
+      const updated = prev.map(o => {
+        if (o.id === orderId) {
+          return {
+            ...o,
+            paymentStatus: status,
+            transactionId: transactionId || o.transactionId
+          };
+        }
+        return o;
+      });
+      localStorage.setItem("paws_orders", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const updateOrderCourier = (
+    orderId: string,
+    courier: "Pathao" | "RedX" | "Steadfast" | "Own delivery",
+    trackingNumber: string
+  ) => {
+    setOrders(prev => {
+      const updated = prev.map(o => {
+        if (o.id === orderId) {
+          return {
+            ...o,
+            courierPartner: courier,
+            trackingNumber
+          };
+        }
+        return o;
+      });
+      localStorage.setItem("paws_orders", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const placeOrder = (
     name: string,
     phone: string,
     address: string,
-    paymentMethod: "cod" | "mfs",
-    area: "inside" | "outside"
+    paymentMethod: "cod" | "bkash" | "nagad" | "card" | "mfs",
+    area: "inside" | "outside" | "sub_area",
+    transactionId?: string
   ): string => {
     const randomCode = Math.floor(1000 + Math.random() * 9000);
     const orderId = `ORD-${randomCode}`;
-    const FREE_SHIPPING_THRESHOLD = 3000;
-    const shippingFee = cartTotal >= FREE_SHIPPING_THRESHOLD ? 0 : area === "inside" ? 60 : 120;
+    
+    const isFreeShipping = cartTotal >= shippingSettings.freeShippingThreshold;
+    const shippingFee = isFreeShipping 
+      ? 0 
+      : area === "inside"
+      ? shippingSettings.insideDhakaCharge
+      : area === "outside"
+      ? shippingSettings.outsideDhakaCharge
+      : shippingSettings.subAreaCharge;
     
     let discount = 0;
     if (appliedCoupon) {
@@ -946,6 +1188,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       shippingFee,
       grandTotal,
       paymentMethod,
+      paymentStatus: paymentMethod === "cod" ? "Unpaid" : "Paid",
+      transactionId: transactionId || undefined,
       status: "Received",
       createdAt: new Date().toISOString(),
     };
@@ -1090,6 +1334,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         couponUsageLogs,
         appliedCoupon,
         couponDiscount,
+        reviews,
+        shippingSettings,
+        updateShippingSettings,
+        refundLogs,
         addToCart,
         removeFromCart,
         updateQuantity,
@@ -1106,6 +1354,13 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         addCoupon,
         toggleCouponStatus,
         deleteCoupon,
+        approveReview,
+        rejectReview,
+        bulkApproveReviews,
+        bulkRejectReviews,
+        initiateRefund,
+        updateOrderPayment,
+        updateOrderCourier,
       }}
     >
       {children}

@@ -44,7 +44,15 @@ export interface Order {
   subtotal: number;
   shippingFee: number;
   grandTotal: number;
-  paymentMethod: "cod" | "mfs";
+  paymentMethod: "cod" | "bkash" | "nagad" | "card" | "mfs";
+  paymentStatus?: "Paid" | "Unpaid" | "Partial";
+  transactionId?: string;
+  courierPartner?: "Pathao" | "RedX" | "Steadfast" | "Own delivery";
+  trackingNumber?: string;
+  refundStatus?: "None" | "Initiated" | "Refunded";
+  refundAmount?: number;
+  refundReason?: string;
+  refundMethod?: string;
   status: "Received" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
   createdAt: string;
 }
@@ -108,14 +116,26 @@ export interface ShopContextType {
     name: string,
     phone: string,
     address: string,
-    paymentMethod: "cod" | "mfs",
-    area: "inside" | "outside"
+    paymentMethod: "cod" | "bkash" | "nagad" | "card" | "mfs",
+    area: "inside" | "outside" | "sub_area",
+    transactionId?: string
   ) => string;
   applyCoupon: (code: string, phone: string) => { success: boolean; message: string };
   removeCoupon: () => void;
   addCoupon: (coupon: Omit<Coupon, "id" | "usedCount" | "createdAt">) => void;
   toggleCouponStatus: (id: string) => void;
   deleteCoupon: (id: string) => void;
+  reviews: Review[];
+  approveReview: (id: string) => void;
+  rejectReview: (id: string, reason?: string) => void;
+  bulkApproveReviews: (ids: string[]) => void;
+  bulkRejectReviews: (ids: string[], reason?: string) => void;
+  shippingSettings: ShippingSettings;
+  updateShippingSettings: (settings: ShippingSettings) => void;
+  refundLogs: RefundLog[];
+  initiateRefund: (orderId: string, amount: number, method: string, reason: string) => void;
+  updateOrderPayment: (orderId: string, status: "Paid" | "Unpaid" | "Partial", transactionId?: string) => void;
+  updateOrderCourier: (orderId: string, courier: "Pathao" | "RedX" | "Steadfast" | "Own delivery", trackingNumber: string) => void;
 }
 
 export interface Coupon {
@@ -145,4 +165,36 @@ export interface CouponUsage {
   customerPhone: string;
   discountAmount: number;
   createdAt: string;
+}
+
+export interface Review {
+  id: string;
+  productId: string;
+  productName: string;
+  customerName: string;
+  customerPhone: string;
+  rating: number; // 1-5
+  comment: string;
+  photoUrl?: string;
+  status: "pending" | "approved" | "rejected";
+  rejectReason?: string;
+  createdAt: string;
+}
+
+export interface RefundLog {
+  id: string;
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  refundAmount: number;
+  refundMethod: string;
+  refundReason: string;
+  createdAt: string;
+}
+
+export interface ShippingSettings {
+  insideDhakaCharge: number;
+  outsideDhakaCharge: number;
+  subAreaCharge: number;
+  freeShippingThreshold: number;
 }

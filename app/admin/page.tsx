@@ -16,11 +16,49 @@ export default function AdminDashboard() {
     updateOrderStatus,
     stockLogs,
     updateStock,
-    bulkUpdateStock
+    bulkUpdateStock,
+    refundLogs,
+    initiateRefund,
+    updateOrderPayment,
+    updateOrderCourier
   } = useShop();
   
   // Navigation Tabs state
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+
+  // Order Details Modal and refund states
+  const [activeOrderModal, setActiveOrderModal] = useState<Order | null>(null);
+  const [refundAmountInput, setRefundAmountInput] = useState("");
+  const [refundReasonInput, setRefundReasonInput] = useState("");
+  const [refundMethodInput, setRefundMethodInput] = useState("bkash");
+  const [showRefundForm, setShowRefundForm] = useState(false);
+
+  const [courierInput, setCourierInput] = useState<"Pathao" | "RedX" | "Steadfast" | "Own delivery">("Pathao");
+  const [trackingInput, setTrackingInput] = useState("");
+  const [paymentStatusInput, setPaymentStatusInput] = useState<"Paid" | "Unpaid" | "Partial">("Unpaid");
+  const [transactionIdInput, setTransactionIdInput] = useState("");
+
+  const handleOpenOrderModal = (order: Order) => {
+    setActiveOrderModal(order);
+    setPaymentStatusInput(order.paymentStatus || "Unpaid");
+    setTransactionIdInput(order.transactionId || "");
+    setCourierInput(order.courierPartner || "Pathao");
+    setTrackingInput(order.trackingNumber || "");
+    setRefundAmountInput(order.grandTotal.toString());
+    setRefundReasonInput("");
+    setRefundMethodInput(order.paymentMethod === "cod" ? "cash" : order.paymentMethod);
+    setShowRefundForm(false);
+  };
+
+  const handleStatusChange = (order: Order, newStatus: Order["status"]) => {
+    if (newStatus === "Shipped") {
+      if (!order.courierPartner || !order.trackingNumber) {
+        alert("⚠️ অর্ডারটি Shipped করতে হলে অবশ্যই কুরিয়ার পার্টনার ও ট্র্যাকিং নম্বর নির্ধারণ করতে হবে! দয়া করে 'বিস্তারিত' বাটনে ক্লিক করে কুরিয়ার ইনফরমেশন যুক্ত করুন।");
+        return;
+      }
+    }
+    updateOrderStatus(order.id, newStatus);
+  };
 
   // Stock inventory states
   const [restockInputs, setRestockInputs] = useState<{ [key: string]: string }>({});
@@ -62,6 +100,16 @@ export default function AdminDashboard() {
     (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
     0
   );
+
+  // New Metrics
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const refundsThisMonth = refundLogs.filter(log => {
+    const d = new Date(log.createdAt);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  }).reduce((sum, log) => sum + log.refundAmount, 0);
+
+  const pendingPayments = orders.filter(o => o.paymentStatus !== "Paid" && o.status !== "Cancelled").reduce((sum, o) => sum + o.grandTotal, 0);
 
   const handleAddProduct = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -219,6 +267,18 @@ export default function AdminDashboard() {
             >
               🏷️ কুপন ও প্রোমো
             </Link>
+            <Link
+              href="/admin/reviews"
+              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
+            >
+              💬 রিভিউ মডারেটর
+            </Link>
+            <Link
+              href="/admin/settings"
+              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 text-stone-500 hover:text-brand-charcoal hover:bg-brand-beige/50 text-center flex items-center gap-1.5 cursor-pointer"
+            >
+              ⚙️ সেটিংস ও চার্জ
+            </Link>
           </nav>
         </div>
       </section>
@@ -231,53 +291,77 @@ export default function AdminDashboard() {
           <div className="space-y-8 animate-fadeIn">
             
             {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
               
               {/* Sales card */}
-              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm flex items-center justify-between">
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">মোট বিক্রয়</span>
-                  <p className="text-2xl font-black text-brand-forest">৳{totalSales.toLocaleString("bn-BD")}</p>
-                  <p className="text-[10px] text-stone-400 font-light">সব সফল অর্ডারের যোগফল</p>
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">মোট বিক্রয়</span>
+                  <p className="text-xl font-black text-brand-forest">৳{totalSales.toLocaleString("bn-BD")}</p>
+                  <p className="text-[9px] text-stone-400 font-light">সব সফল অর্ডারের যোগফল</p>
                 </div>
-                <div className="p-3 bg-brand-forest/5 text-brand-forest rounded-2xl border border-brand-forest/10 text-xl font-bold">
+                <div className="p-2 bg-brand-forest/5 text-brand-forest rounded-xl border border-brand-forest/10 text-base font-bold">
                   ৳
                 </div>
               </div>
 
               {/* Orders card */}
-              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm flex items-center justify-between">
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">মোট অর্ডার</span>
-                  <p className="text-2xl font-black text-brand-charcoal">{totalOrders} টি</p>
-                  <p className="text-[10px] text-stone-400 font-light">ইন-অ্যাপ ও সিওডি বুকিং</p>
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">মোট অর্ডার</span>
+                  <p className="text-xl font-black text-brand-charcoal">{totalOrders} টি</p>
+                  <p className="text-[9px] text-stone-400 font-light">ইন-অ্যাপ ও সিওডি বুকিং</p>
                 </div>
-                <div className="p-3 bg-stone-100 text-brand-charcoal rounded-2xl border border-stone-200 text-xl font-bold">
+                <div className="p-2 bg-stone-100 text-brand-charcoal rounded-xl border border-stone-200 text-base font-bold">
                   📋
                 </div>
               </div>
 
               {/* Basket Size card */}
-              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm flex items-center justify-between">
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">গড় অর্ডার মূল্য</span>
-                  <p className="text-2xl font-black text-brand-charcoal">৳{avgBasketSize.toLocaleString("bn-BD")}</p>
-                  <p className="text-[10px] text-stone-400 font-light">প্রতি গ্রাহকের গড় খরচ</p>
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">গড় অর্ডার মূল্য</span>
+                  <p className="text-xl font-black text-brand-charcoal font-sans">৳{avgBasketSize.toLocaleString("bn-BD")}</p>
+                  <p className="text-[9px] text-stone-400 font-light">প্রতি গ্রাহকের গড় খরচ</p>
                 </div>
-                <div className="p-3 bg-amber-50 text-amber-700 rounded-2xl border border-amber-100 text-xl font-bold">
+                <div className="p-2 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 text-base font-bold">
                   ⚖️
                 </div>
               </div>
 
               {/* Items sold card */}
-              <div className="bg-white rounded-2xl border border-brand-beige-dark p-6 shadow-sm flex items-center justify-between">
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">বিক্রীত আইটেম</span>
-                  <p className="text-2xl font-black text-brand-forest">{totalItemsSold} টি</p>
-                  <p className="text-[10px] text-stone-400 font-light">পরিমাণ অনুযায়ী গণনা</p>
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">বিক্রীত আইটেম</span>
+                  <p className="text-xl font-black text-brand-forest">{totalItemsSold} টি</p>
+                  <p className="text-[9px] text-stone-400 font-light">পরিমাণ অনুযায়ী গণনা</p>
                 </div>
-                <div className="p-3 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 text-xl font-bold">
+                <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 text-base font-bold">
                   📦
+                </div>
+              </div>
+
+              {/* Pending Payments card */}
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between animate-fadeIn">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">বাকি পেমেন্ট (Pending)</span>
+                  <p className="text-xl font-black text-amber-600 font-sans">৳{pendingPayments.toLocaleString("bn-BD")}</p>
+                  <p className="text-[9px] text-stone-400 font-light">সব বকেয়া পেমেন্টের মোট পরিমাণ</p>
+                </div>
+                <div className="p-2 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 text-base font-bold">
+                  ⏳
+                </div>
+              </div>
+
+              {/* Refunds This Month card */}
+              <div className="bg-white rounded-2xl border border-brand-beige-dark p-4 shadow-sm flex items-center justify-between animate-fadeIn">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block font-semibold text-red-650">রিফান্ড (চলতি মাস)</span>
+                  <p className="text-xl font-black text-red-700 font-sans">৳{refundsThisMonth.toLocaleString("bn-BD")}</p>
+                  <p className="text-[9px] text-stone-400 font-light">এই মাসে সফল রিফান্ডসমূহ</p>
+                </div>
+                <div className="p-2 bg-red-50 text-red-700 rounded-xl border border-red-100 text-base font-bold">
+                  💸
                 </div>
               </div>
 
@@ -844,22 +928,39 @@ export default function AdminDashboard() {
                             ৳{order.grandTotal.toLocaleString("bn-BD")}
                             <p className="text-[9px] text-stone-400 font-light mt-0.5">(ডেলিভারি: ৳{order.shippingFee})</p>
                           </td>
-                          <td className="py-3 px-3 sm:py-4 sm:px-6">
-                            <span className="px-2 py-0.5 text-[10px] rounded bg-stone-100 border border-stone-200 text-stone-600 font-semibold uppercase tracking-wider">
-                              {order.paymentMethod === "cod" ? "Cash (COD)" : "bKash/Nagad"}
-                            </span>
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 space-y-1">
+                            <div className="flex gap-1 flex-wrap">
+                              <span className="px-1.5 py-0.5 text-[9px] rounded bg-stone-100 border border-stone-200 text-stone-600 font-bold uppercase tracking-wider">
+                                {order.paymentMethod}
+                              </span>
+                              <span className={`px-1.5 py-0.5 text-[9px] rounded font-bold border ${
+                                order.paymentStatus === "Paid"
+                                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                                  : order.paymentStatus === "Partial"
+                                  ? "bg-amber-50 border-amber-200 text-amber-700"
+                                  : "bg-red-50 border-red-200 text-red-700"
+                              }`}>
+                                {order.paymentStatus || "Unpaid"}
+                              </span>
+                            </div>
+                            {order.transactionId && (
+                              <p className="text-[9px] font-mono text-stone-400">TXID: {order.transactionId}</p>
+                            )}
+                            {order.courierPartner && (
+                              <p className="text-[9px] font-semibold text-brand-forest mt-0.5">🚚 {order.courierPartner}</p>
+                            )}
                           </td>
-                          <td className="py-3 px-3 sm:py-4 sm:px-6 text-center">
+                          <td className="py-3 px-3 sm:py-4 sm:px-6 text-center space-y-2">
                             <select
                               value={order.status}
-                              onChange={(e) => updateOrderStatus(order.id, e.target.value as Order["status"])}
-                              className={`text-xs font-semibold rounded-lg p-2 border focus:outline-none focus:ring-1 focus:ring-brand-forest cursor-pointer transition-all ${
+                              onChange={(e) => handleStatusChange(order, e.target.value as Order["status"])}
+                              className={`text-xs font-semibold rounded-lg p-1.5 border focus:outline-none focus:ring-1 focus:ring-brand-forest cursor-pointer transition-all ${
                                 order.status === "Delivered"
                                   ? "bg-brand-forest/10 border-brand-forest/25 text-brand-forest"
                                   : order.status === "Shipped"
                                   ? "bg-emerald-50 border-emerald-200 text-emerald-700"
                                   : order.status === "Processing"
-                                  ? "bg-amber-50 border-amber-200 text-amber-700"
+                                  ? "bg-amber-50 border-amber-200 text-amber-750"
                                   : order.status === "Cancelled"
                                   ? "bg-red-50 border-red-200 text-red-700"
                                   : "bg-stone-50 border-stone-200 text-stone-600"
@@ -871,6 +972,14 @@ export default function AdminDashboard() {
                               <option value="Delivered">Delivered</option>
                               <option value="Cancelled">Cancelled</option>
                             </select>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenOrderModal(order)}
+                              className="block mx-auto text-[10px] bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-beige px-2 py-1 rounded transition-colors font-bold cursor-pointer"
+                            >
+                              🔍 বিস্তারিত (Details)
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1064,6 +1173,284 @@ export default function AdminDashboard() {
 
           </div>
         )}
+
+        {/* Order Details Modal Overlay */}
+        {activeOrderModal && (() => {
+          const liveOrder = orders.find(o => o.id === activeOrderModal.id) || activeOrderModal;
+          return (
+            <div className="fixed inset-0 bg-brand-charcoal/65 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+              <div className="bg-white rounded-3xl border border-brand-beige-dark max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 md:p-8 space-y-6 relative animate-scaleUp">
+                
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setActiveOrderModal(null)}
+                  className="absolute top-5 right-5 text-stone-400 hover:text-brand-charcoal text-xl font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+
+                {/* Modal Title */}
+                <div className="border-b border-brand-beige-dark pb-4">
+                  <span className="bg-brand-forest/10 border border-brand-forest/20 text-brand-forest px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    অর্ডার বিবরণী
+                  </span>
+                  <h3 className="text-lg font-black text-brand-charcoal mt-2">অর্ডার আইডি: {liveOrder.id}</h3>
+                  <p className="text-[10px] text-stone-400 font-light mt-0.5">
+                    অর্ডার সময়: {new Date(liveOrder.createdAt).toLocaleString("bn-BD")}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  
+                  {/* Left Column: Order Summary & Address details */}
+                  <div className="space-y-6">
+                    <div className="bg-brand-beige/35 border border-brand-beige-dark p-5 rounded-2xl space-y-4">
+                      <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">গ্রাহকের ডেলিভারি বিবরণ</h4>
+                      <div className="text-xs space-y-2 text-brand-charcoal">
+                        <p><span className="font-bold text-stone-400">নাম:</span> {liveOrder.customerName}</p>
+                        <p><span className="font-bold text-stone-400">মোবাইল:</span> {liveOrder.customerPhone}</p>
+                        <p><span className="font-bold text-stone-400">ঠিকানা:</span> {liveOrder.customerAddress}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">অর্ডারকৃত আইটেমসমূহ ({liveOrder.items.length})</h4>
+                      <div className="divide-y divide-brand-beige-dark bg-white border border-brand-beige-dark rounded-2xl overflow-hidden">
+                        {liveOrder.items.map((item, index) => (
+                          <div key={index} className="p-3 text-xs flex justify-between items-center hover:bg-brand-beige/10">
+                            <div>
+                              <p className="font-bold text-brand-charcoal">{item.name}</p>
+                              {item.selectedVariantId && (
+                                <p className="text-[9px] text-stone-400 font-light">ভ্যারিয়েন্ট আইডি: {item.selectedVariantId}</p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-brand-charcoal">৳{item.price.toLocaleString("bn-BD")} x {item.quantity}</p>
+                              <p className="text-[10px] text-brand-forest font-black">৳{(item.price * item.quantity).toLocaleString("bn-BD")}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bill summary */}
+                    <div className="bg-brand-beige/20 border border-brand-beige-dark p-4 rounded-2xl space-y-2 text-xs">
+                      <div className="flex justify-between font-light">
+                        <span>পণ্যের মোট মূল্য (Subtotal):</span>
+                        <span>৳{liveOrder.subtotal?.toLocaleString("bn-BD") || liveOrder.items.reduce((acc, i) => acc + i.price * i.quantity, 0).toLocaleString("bn-BD")}</span>
+                      </div>
+                      <div className="flex justify-between font-light">
+                        <span>ডেলিভারি চার্জ:</span>
+                        <span>৳{liveOrder.shippingFee.toLocaleString("bn-BD")}</span>
+                      </div>
+                      {liveOrder.grandTotal - (liveOrder.subtotal || 0) - liveOrder.shippingFee < 0 && (
+                        <div className="flex justify-between text-red-600 font-medium">
+                          <span>ডিসকাউন্ট/কুপন ছাড়:</span>
+                          <span>-৳{Math.abs(liveOrder.grandTotal - (liveOrder.subtotal || 0) - liveOrder.shippingFee).toLocaleString("bn-BD")}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-black text-sm text-brand-forest pt-2 border-t border-brand-beige-dark mt-2">
+                        <span>সর্বমোট বিল (Grand Total):</span>
+                        <span>৳{liveOrder.grandTotal.toLocaleString("bn-BD")}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Administrative Controls & Refund */}
+                  <div className="space-y-6">
+                    
+                    {/* Payment Control */}
+                    <div className="bg-white rounded-2xl border border-brand-beige-dark p-5 shadow-xs space-y-3">
+                      <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">পেমেন্ট ট্র্যাকিং</h4>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-stone-400 block">পেমেন্ট স্ট্যাটাস</label>
+                          <select
+                            value={paymentStatusInput}
+                            onChange={(e) => setPaymentStatusInput(e.target.value as any)}
+                            className="w-full bg-brand-beige border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                          >
+                            <option value="Paid">Paid</option>
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Partial">Partial</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-stone-400 block">ট্রানজেকশন আইডি (Txn ID)</label>
+                          <input
+                            type="text"
+                            placeholder="যেমন: TRX92834"
+                            value={transactionIdInput}
+                            onChange={(e) => setTransactionIdInput(e.target.value)}
+                            className="w-full bg-brand-beige border border-brand-beige-dark rounded-lg p-2 focus:outline-none uppercase font-mono font-semibold"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateOrderPayment(liveOrder.id, paymentStatusInput, transactionIdInput);
+                          alert("✓ পেমেন্ট রেকর্ড সফলভাবে আপডেট করা হয়েছে!");
+                        }}
+                        className="w-full bg-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 text-xs py-2 rounded-lg font-bold transition-colors cursor-pointer"
+                      >
+                        পেমেন্ট রেকর্ড আপডেট করুন
+                      </button>
+                    </div>
+
+                    {/* Courier Control */}
+                    <div className="bg-white rounded-2xl border border-brand-beige-dark p-5 shadow-xs space-y-3">
+                      <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">কুরিয়ার ও ডিসপ্যাচ বিবরণ</h4>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-stone-400 block">কুরিয়ার পার্টনার</label>
+                          <select
+                            value={courierInput}
+                            onChange={(e) => setCourierInput(e.target.value as any)}
+                            className="w-full bg-brand-beige border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                          >
+                            <option value="Pathao">Pathao</option>
+                            <option value="RedX">RedX</option>
+                            <option value="Steadfast">Steadfast</option>
+                            <option value="Own delivery">Own delivery</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-stone-400 block">কুরিয়ার ট্র্যাকিং আইডি</label>
+                          <input
+                            type="text"
+                            placeholder="যেমন: PATHAO-984392"
+                            value={trackingInput}
+                            onChange={(e) => setTrackingInput(e.target.value)}
+                            className="w-full bg-brand-beige border border-brand-beige-dark rounded-lg p-2 focus:outline-none font-semibold"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!trackingInput.trim()) {
+                            alert("⚠️ কুরিয়ার ট্র্যাকিং নম্বর প্রদান করা আবশ্যক!");
+                            return;
+                          }
+                          updateOrderCourier(liveOrder.id, courierInput, trackingInput.trim());
+                          alert("✓ কুরিয়ার বিবরণ ও ট্র্যাকিং আইডি সফলভাবে যুক্ত করা হয়েছে!");
+                        }}
+                        className="w-full bg-brand-charcoal text-brand-beige hover:bg-brand-charcoal/90 text-xs py-2 rounded-lg font-bold transition-colors cursor-pointer"
+                      >
+                        কুরিয়ার ট্র্যাকিং আপডেট করুন
+                      </button>
+                    </div>
+
+                    {/* Refund initiator control */}
+                    <div className="bg-white rounded-2xl border border-brand-beige-dark p-5 shadow-xs space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">রিফান্ড মডারেটর</h4>
+                        {liveOrder.refundStatus ? (
+                          <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">
+                            {liveOrder.refundStatus}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-stone-400 font-light">কোনো রিফান্ড অ্যাকশন নেই</span>
+                        )}
+                      </div>
+
+                      {!showRefundForm ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowRefundForm(true);
+                            setRefundAmountInput(liveOrder.grandTotal.toString());
+                          }}
+                          className="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs py-2 rounded-lg font-bold transition-colors cursor-pointer"
+                        >
+                          💸 রিফান্ড ইস্যু করুন (Refund Initiate)
+                        </button>
+                      ) : (
+                        <div className="border border-red-200 bg-red-50/20 p-4 rounded-xl space-y-3 text-xs animate-slideDown">
+                          <h5 className="font-bold text-red-700 text-[11px]">নতুন রিফান্ড ইস্যু ফর্ম</h5>
+                          
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড পরিমাণ (৳)</label>
+                            <input
+                              type="number"
+                              value={refundAmountInput}
+                              onChange={(e) => setRefundAmountInput(e.target.value)}
+                              className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড মাধ্যম</label>
+                            <select
+                              value={refundMethodInput}
+                              onChange={(e) => setRefundMethodInput(e.target.value)}
+                              className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                            >
+                              <option value="bkash">bKash</option>
+                              <option value="nagad">Nagad</option>
+                              <option value="card">Card</option>
+                              <option value="cash">Cash (COD)</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-stone-400 block">রিফান্ড কারণ</label>
+                            <textarea
+                              rows={2}
+                              placeholder="রিফান্ড ইস্যু করার কারণ লিখুন..."
+                              value={refundReasonInput}
+                              onChange={(e) => setRefundReasonInput(e.target.value)}
+                              className="w-full bg-white border border-brand-beige-dark rounded-lg p-2 focus:outline-none"
+                            />
+                          </div>
+
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const amount = Number(refundAmountInput);
+                                if (isNaN(amount) || amount <= 0) {
+                                  alert("⚠️ অনুগ্রহ করে সঠিক পরিমাণ টাকা ইনপুট করুন।");
+                                  return;
+                                }
+                                if (!refundReasonInput.trim()) {
+                                  alert("⚠️ রিফান্ড ইস্যু করার কারণ অবশ্যই লিখতে হবে।");
+                                  return;
+                                }
+                                initiateRefund(liveOrder.id, amount, refundMethodInput, refundReasonInput.trim());
+                                alert("✓ রিফান্ড ইস্যু সফল হয়েছে!");
+                                setShowRefundForm(false);
+                              }}
+                              className="flex-1 bg-red-650 hover:bg-red-750 bg-red-600 text-brand-beige py-2 rounded-lg font-bold text-center text-xs transition-colors cursor-pointer"
+                            >
+                              কনফার্ম রিফান্ড
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowRefundForm(false)}
+                              className="bg-stone-200 text-brand-charcoal hover:bg-stone-300 py-2 px-4 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                            >
+                              বাতিল
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
 
       </main>
 

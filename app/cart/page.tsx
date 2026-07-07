@@ -19,19 +19,26 @@ export default function CartPage() {
     appliedCoupon,
     couponDiscount,
     applyCoupon,
-    removeCoupon
+    removeCoupon,
+    shippingSettings
   } = useShop();
 
   // Delivery configuration
-  const FREE_SHIPPING_THRESHOLD = 3000;
-  const [deliveryArea, setDeliveryArea] = useState<"inside" | "outside">("inside");
-  const shippingFee = cartTotal >= FREE_SHIPPING_THRESHOLD ? 0 : deliveryArea === "inside" ? 60 : 120;
-  const remainsForFreeShipping = FREE_SHIPPING_THRESHOLD - cartTotal;
+  const [deliveryArea, setDeliveryArea] = useState<"inside" | "outside" | "sub_area">("inside");
+  const shippingFee = cartTotal >= shippingSettings.freeShippingThreshold
+    ? 0 
+    : deliveryArea === "inside"
+    ? shippingSettings.insideDhakaCharge
+    : deliveryArea === "outside"
+    ? shippingSettings.outsideDhakaCharge
+    : shippingSettings.subAreaCharge;
+  const remainsForFreeShipping = shippingSettings.freeShippingThreshold - cartTotal;
   const grandTotal = Math.max(0, cartTotal + shippingFee - couponDiscount);
 
   // Checkout form states
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
+  const [transactionId, setTransactionId] = useState<string>("");
   
   // Coupon input and validation states
   const [couponInput, setCouponInput] = useState<string>("");
@@ -55,7 +62,7 @@ export default function CartPage() {
     }
   };
   const [address, setAddress] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "mfs">("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "bkash" | "nagad" | "card" | "mfs">("cod");
 
   // Success checkout state
   const [placedOrderId, setPlacedOrderId] = useState<string>("");
@@ -63,6 +70,10 @@ export default function CartPage() {
 
   const handlePlaceOrder = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (paymentMethod !== "cod" && !transactionId.trim()) {
+      alert("⚠️ ডিজিটাল পেমেন্ট ভেরিফাই করতে ট্রানজেকশন আইডি প্রবেশ করা আবশ্যক।");
+      return;
+    }
     if (!name.trim() || !phone.trim() || !address.trim()) {
       alert("অনুগ্রহ করে সব তথ্য সঠিক উপায়ে পূরণ করুন।");
       return;
@@ -91,7 +102,7 @@ export default function CartPage() {
     }
     
     // Call centralized placeOrder to sync with local storage & orders history
-    const orderId = placeOrder(name, phone, address, paymentMethod, deliveryArea);
+    const orderId = placeOrder(name, phone, address, paymentMethod, deliveryArea, transactionId || undefined);
     
     setPlacedOrderId(orderId);
     setCheckoutStep("success");
@@ -262,12 +273,12 @@ export default function CartPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs font-semibold text-brand-charcoal">
                     <span>ডেলিভারি প্রগতি:</span>
-                    <span>৳{cartTotal.toLocaleString("bn-BD")} / ৳৩,০০০</span>
+                    <span>৳{cartTotal.toLocaleString("bn-BD")} / ৳{shippingSettings.freeShippingThreshold.toLocaleString("bn-BD")}</span>
                   </div>
                   <div className="w-full bg-brand-beige-dark h-2 rounded-full overflow-hidden">
                     <div 
                       className="bg-brand-forest h-2 rounded-full transition-all duration-500" 
-                      style={{ width: `${Math.min((cartTotal / FREE_SHIPPING_THRESHOLD) * 100, 100)}%` }}
+                      style={{ width: `${Math.min((cartTotal / shippingSettings.freeShippingThreshold) * 100, 100)}%` }}
                     />
                   </div>
                   <p className="text-[10px] text-stone-500 font-light">
@@ -344,29 +355,40 @@ export default function CartPage() {
                   
                   {/* Delivery Location Area Selection */}
                   <div className="space-y-2">
-                    <label className="text-[11px] font-semibold text-stone-500">ডেলিভারি এলাকা:</label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <label className="text-[11px] font-semibold text-stone-500">ডেলিভারি এলাকা (Delivery Zone):</label>
+                    <div className="grid grid-cols-3 gap-2">
                       <button
                         type="button"
                         onClick={() => setDeliveryArea("inside")}
-                        className={`py-2 text-xs font-semibold rounded-lg border text-center transition-all ${
+                        className={`py-2 text-[10px] font-bold rounded-lg border text-center transition-all ${
                           deliveryArea === "inside"
                             ? "bg-brand-forest border-brand-forest text-brand-beige"
                             : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
                         }`}
                       >
-                        ঢাকার ভেতরে
+                        ঢাকা সিটির ভেতরে (৳{shippingSettings.insideDhakaCharge})
                       </button>
                       <button
                         type="button"
                         onClick={() => setDeliveryArea("outside")}
-                        className={`py-2 text-xs font-semibold rounded-lg border text-center transition-all ${
+                        className={`py-2 text-[10px] font-bold rounded-lg border text-center transition-all ${
                           deliveryArea === "outside"
                             ? "bg-brand-forest border-brand-forest text-brand-beige"
                             : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
                         }`}
                       >
-                        ঢাকার বাইরে
+                        ঢাকা সিটির বাইরে (৳{shippingSettings.outsideDhakaCharge})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryArea("sub_area")}
+                        className={`py-2 text-[10px] font-bold rounded-lg border text-center transition-all ${
+                          deliveryArea === "sub_area"
+                            ? "bg-brand-forest border-brand-forest text-brand-beige"
+                            : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
+                        }`}
+                      >
+                        সাব-এরিয়া (৳{shippingSettings.subAreaCharge})
                       </button>
                     </div>
                   </div>
@@ -412,32 +434,77 @@ export default function CartPage() {
 
                   {/* Payment selector */}
                   <div className="space-y-2">
-                    <label className="text-[11px] font-semibold text-stone-500">পেমেন্ট পদ্ধতি:</label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <label className="text-[11px] font-semibold text-stone-500">পেমেন্ট পদ্ধতি (Payment Method):</label>
+                    <div className="grid grid-cols-4 gap-2">
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod("cod")}
-                        className={`py-2 text-xs font-semibold rounded-lg border text-center transition-all ${
+                        onClick={() => {
+                          setPaymentMethod("cod");
+                          setTransactionId("");
+                        }}
+                        className={`py-2 text-[10px] font-bold rounded-lg border text-center transition-all ${
                           paymentMethod === "cod"
                             ? "bg-brand-forest border-brand-forest text-brand-beige"
                             : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
                         }`}
                       >
-                        ক্যাশ অন ডেলিভারি
+                        Cash (COD)
                       </button>
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod("mfs")}
-                        className={`py-2 text-xs font-semibold rounded-lg border text-center transition-all ${
-                          paymentMethod === "mfs"
+                        onClick={() => setPaymentMethod("bkash")}
+                        className={`py-2 text-[10px] font-bold rounded-lg border text-center transition-all ${
+                          paymentMethod === "bkash"
                             ? "bg-brand-forest border-brand-forest text-brand-beige"
                             : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
                         }`}
                       >
-                        বিকাশ / নগদ (MFS)
+                        bKash
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("nagad")}
+                        className={`py-2 text-[10px] font-bold rounded-lg border text-center transition-all ${
+                          paymentMethod === "nagad"
+                            ? "bg-brand-forest border-brand-forest text-brand-beige"
+                            : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
+                        }`}
+                      >
+                        Nagad
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("card")}
+                        className={`py-2 text-[10px] font-bold rounded-lg border text-center transition-all ${
+                          paymentMethod === "card"
+                            ? "bg-brand-forest border-brand-forest text-brand-beige"
+                            : "bg-white border-brand-beige-dark text-brand-charcoal hover:bg-brand-beige"
+                        }`}
+                      >
+                        Card
                       </button>
                     </div>
                   </div>
+
+                  {paymentMethod !== "cod" && (
+                    <div className="bg-brand-beige/50 border border-brand-beige-dark/70 p-3 rounded-lg space-y-2 animate-slideDown">
+                      <p className="text-[10px] text-stone-500 font-light leading-relaxed">
+                        বিকাশ/নগদ/কার্ড পেমেন্ট করুন এবং পেমেন্ট শেষে প্রাপ্ত ট্রানজেকশন আইডি (Transaction ID) নিচে লিখুন।
+                      </p>
+                      <div className="space-y-1">
+                        <label htmlFor="txn-id" className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">ট্রানজেকশন আইডি *</label>
+                        <input
+                          id="txn-id"
+                          type="text"
+                          required
+                          placeholder="যেমন: TRX783492"
+                          value={transactionId}
+                          onChange={(e) => setTransactionId(e.target.value)}
+                          className="w-full bg-white border border-brand-beige-dark text-xs rounded-lg p-2 text-brand-charcoal focus:outline-none uppercase font-semibold"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     type="submit"
