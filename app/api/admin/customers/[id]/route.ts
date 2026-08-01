@@ -1,62 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/mockDb";
+import { getCustomers, updateCustomerStatus } from "@/lib/db";
+import { getStaffSession } from "@/lib/auth";
 
-type RouteParams = {
-  params: Promise<{ id: string }> | { id: string };
-};
-
-export async function GET(request: NextRequest, context: RouteParams) {
-  try {
-    // Resolve params which might be a Promise in Next.js 15+
-    const params = await context.params;
-    const id = params.id;
-    
-    const customer = db.getCustomerById(id);
-    if (!customer) {
-      return NextResponse.json(
-        { error: "Customer not found" },
-        { status: 404 }
-      );
-    }
-    return NextResponse.json(customer);
-  } catch (error) {
-    console.error("API route error [GET customer by id]:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const session = await getStaffSession();
+  if (!session) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
+
+  const { id } = await context.params;
+  const { customers } = await getCustomers({ search: id });
+  const customer = customers.find((c) => c.id === id);
+
+  if (!customer) {
+    return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true, customer });
 }
 
-export async function PATCH(request: NextRequest, context: RouteParams) {
-  try {
-    const params = await context.params;
-    const id = params.id;
-    
-    const body = await request.json();
-    const { status } = body;
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const session = await getStaffSession();
+  if (!session) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
 
-    if (!status || (status !== "active" && status !== "blocked")) {
-      return NextResponse.json(
-        { error: "Invalid status value. Must be 'active' or 'blocked'." },
-        { status: 400 }
-      );
-    }
+  const { id } = await context.params;
+  const body = await request.json();
+  const { status } = body;
 
-    const updated = db.updateCustomerStatus(id, status);
-    if (!updated) {
-      return NextResponse.json(
-        { error: "Customer not found" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(updated);
-  } catch (error) {
-    console.error("API route error [PATCH customer]:", error);
+  if (!status || (status !== "active" && status !== "blocked")) {
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      { success: false, error: "Invalid status value" },
+      { status: 400 }
     );
   }
+
+  const updated = await updateCustomerStatus(id, status);
+  if (!updated) {
+    return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true, customer: updated });
 }

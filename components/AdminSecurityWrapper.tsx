@@ -16,10 +16,10 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
-    const success = loginStaff(email, password);
+    const success = await loginStaff(email, password);
     if (!success) {
       setErrorMsg("ভুল ইমেইল বা পাসওয়ার্ড! সঠিক বিবরণী দিন।");
     }

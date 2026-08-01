@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/mockDb";
+import { getReviews, updateReviewStatus } from "@/lib/db";
+import { getStaffSession } from "@/lib/auth";
 
 export async function GET() {
-  try {
-    const list = db.getReviews();
-    return NextResponse.json({ success: true, reviews: list });
-  } catch (error) {
-    console.error("GET Reviews API Error:", error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
-  }
+  const reviews = await getReviews();
+  return NextResponse.json({ success: true, reviews });
 }
 
 export async function POST(req: Request) {
+  const session = await getStaffSession();
+  if (!session) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { action, ids, reason } = body;
@@ -20,19 +21,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
     }
 
-    if (action !== "approve" && action !== "reject") {
-      return NextResponse.json({ success: false, error: "Invalid action value" }, { status: 400 });
-    }
-
     const status = action === "approve" ? "approved" : "rejected";
-    db.bulkUpdateReviews(ids, status, reason);
+    for (const id of ids) {
+      await updateReviewStatus(id, status, reason);
+    }
 
     return NextResponse.json({
       success: true,
       message: `Successfully ${status} ${ids.length} review(s).`,
     });
   } catch (error) {
-    console.error("POST Reviews Moderation Error:", error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }

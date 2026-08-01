@@ -1,455 +1,50 @@
-"use client";
+import { Metadata } from "next";
+import { getProducts } from "@/lib/db";
+import ProductsCatalogView from "@/components/shop/ProductsCatalogView";
 
-import React, { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { useShop } from "@/context/ShopContext";
-import { Product } from "@/types";
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ cat?: string; search?: string }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const category = params.cat ? ` ${params.cat.toUpperCase()}` : "";
+  const query = params.search ? ` - "${params.search}"` : "";
 
-function ProductsCatalogContent() {
-  const searchParams = useSearchParams();
-  const { addToCart, products, reviews, orders } = useShop();
-  
-  // Track selected variants for each product
-  const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: string }>({});
-  
-  // Review Modal State
-  const [selectedReviewProduct, setSelectedReviewProduct] = useState<Product | null>(null);
-
-  // Search parameters states
-  const categoryParam = searchParams.get("cat") || "";
-  const queryParam = searchParams.get("search") || "";
-
-  // Filtering states
-  const [searchVal, setSearchVal] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedBrand, setSelectedBrand] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<number>(3000);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState<boolean>(false);
-
-  // Sync state with URL search parameters
-  useEffect(() => {
-    setSearchVal(queryParam);
-    setSelectedCategory(categoryParam);
-  }, [queryParam, categoryParam]);
-
-  // Filter handlers
-  const filteredProducts = products.filter((product) => {
-    const category = product.category || "cats";
-    const brand = product.brand || "Pawsome";
-
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchVal.toLowerCase()) ||
-      category.toLowerCase().includes(searchVal.toLowerCase()) ||
-      brand.toLowerCase().includes(searchVal.toLowerCase());
-
-    const matchesCategory = selectedCategory ? category === selectedCategory : true;
-    const matchesBrand = selectedBrand ? brand === selectedBrand : true;
-    const matchesPrice = product.price <= maxPrice;
-
-    return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
-  });
-
-  return (
-    <div className="bg-brand-beige flex-1 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-brand-beige-dark pb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-brand-charcoal">পেট এক্সেসরিজ কালেকশন</h1>
-            <p className="text-sm text-stone-500 font-light mt-1">প্রিমিয়াম কোয়ালিটির প্রোডাক্ট খুঁজুন ও কার্টে যোগ করুন</p>
-          </div>
-          {searchVal && (
-            <div className="text-xs bg-brand-forest/5 text-brand-forest px-3 py-1.5 rounded-full border border-brand-forest/15 font-medium">
-              অনুসন্ধানের ফলাফল: &quot;{searchVal}&quot; ({filteredProducts.length}টি প্রোডাক্ট পাওয়া গেছে)
-            </div>
-          )}
-        </div>
-
-        {/* Mobile Filter Toggle Button */}
-        <div className="flex lg:hidden justify-between items-center bg-white p-4 rounded-xl border border-brand-beige-dark shadow-sm gap-4">
-          <div className="text-xs font-semibold text-brand-charcoal">
-            ফিল্টার অপশন খুঁজে দেখুন
-          </div>
-          <button
-            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-            className="bg-brand-forest hover:bg-brand-forest-light text-brand-beige px-4 py-2 rounded-full text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1"
-          >
-            <span>{mobileFiltersOpen ? "ফিল্টার বন্ধ করুন ✕" : "ফিল্টার দেখান 🛠️"}</span>
-          </button>
-        </div>
-
-        {/* Catalog Grid Structure */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          
-          {/* Filters Sidebar */}
-          <div className={`${mobileFiltersOpen ? "block" : "hidden lg:block"} bg-white rounded-3xl p-6 border border-brand-beige-dark/60 shadow-sm h-fit space-y-6`}>
-            <h2 className="text-base font-bold text-brand-charcoal border-b border-brand-beige-dark pb-3">ফিল্টার অপশন</h2>
-            
-            {/* Category Filter */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">পোষা প্রাণী</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-brand-beige/50 border border-brand-beige-dark/80 text-sm rounded-xl py-3 px-4 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-all"
-              >
-                <option value="">সকল ক্যাটাগরি</option>
-                <option value="cats">বিড়াল (Cats)</option>
-                <option value="dogs">কুকুর (Dogs)</option>
-                <option value="birds">পাখি (Birds)</option>
-              </select>
-            </div>
-
-            {/* Brand Filter */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">ব্র্যান্ড</label>
-              <select
-                value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="w-full bg-brand-beige/50 border border-brand-beige-dark/80 text-sm rounded-xl py-3 px-4 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-all"
-              >
-                <option value="">সকল ব্র্যান্ড</option>
-                <option value="Pawsome">Pawsome</option>
-                <option value="MeowMix">MeowMix</option>
-                <option value="DoggyStyles">DoggyStyles</option>
-              </select>
-            </div>
-
-            {/* Price Filter */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">সর্বোচ্চ বাজেট</label>
-                <span className="text-xs font-semibold text-brand-forest">৳{maxPrice.toLocaleString("bn-BD")}</span>
-              </div>
-              <input
-                type="range"
-                min="300"
-                max="3000"
-                step="50"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full h-1.5 bg-brand-beige-dark rounded-lg appearance-none cursor-pointer accent-brand-forest"
-              />
-              <div className="flex justify-between text-[10px] text-stone-400">
-                <span>৳৩০০</span>
-                <span>৳৩,০০০</span>
-              </div>
-            </div>
-
-            {/* Reset Filters */}
-            <button
-              onClick={() => {
-                setSelectedCategory("");
-                setSelectedBrand("");
-                setMaxPrice(3000);
-                setSearchVal("");
-              }}
-              className="w-full bg-brand-beige hover:bg-brand-beige-dark text-brand-charcoal py-3 rounded-xl text-xs font-semibold transition-colors border border-brand-beige-dark/80 cursor-pointer"
-            >
-              সব ফিল্টার মুছুন
-            </button>
-          </div>
-
-          {/* Catalog Grid */}
-          <div className="lg:col-span-3">
-            {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => {
-                  const category = product.category || "cats";
-                  const brand = product.brand || "Pawsome";
-                  
-                  return (
-                    <div
-                      key={product.id}
-                      className="bg-white rounded-3xl border border-brand-beige-dark/45 p-6 flex flex-col justify-between hover:shadow-[0_8px_30px_rgba(45,90,39,0.06)] hover:-translate-y-1 hover:border-brand-forest/15 transition-all duration-300"
-                    >
-                      <div className="space-y-4">
-                        {/* Tags */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] bg-brand-forest/5 text-brand-forest px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider border border-brand-forest/10">
-                            {category === "cats" ? "বিড়াল" : category === "dogs" ? "কুকুর" : "পাখি"}
-                          </span>
-                          <span className="text-[10px] text-stone-400">{brand}</span>
-                        </div>
-
-                        {/* Visual Product Image with Fallback */}
-                        <div className="h-44 bg-brand-beige rounded-2xl overflow-hidden border border-brand-beige-dark/50 flex items-center justify-center relative">
-                          {product.id === "1" ? (
-                            <img src="/collar.png" alt={product.name} className="w-full h-full object-cover" />
-                          ) : product.id === "cat_litter_premium" ? (
-                            <img src="/litter.png" alt={product.name} className="w-full h-full object-cover" />
-                          ) : product.id === "leather_dog_leash" ? (
-                            <img src="/leash.png" alt={product.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border border-brand-beige-dark/30 shadow-inner">
-                              {category === "cats" ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-brand-forest/60">
-                                  <path d="M12 21c-4.418 0-8-3.582-8-8 0-3.55 2.317-6.56 5.5-7.58L6 2l4 3.5C10.63 5.17 11.3 5 12 5s1.37.17 2 .5L18 2l-3.5 3.42c3.183 1.02 5.5 4.03 5.5 7.58 0 4.418-3.582 8-8 8z" />
-                                  <circle cx="9" cy="12" r="1" fill="currentColor" />
-                                  <circle cx="15" cy="12" r="1" fill="currentColor" />
-                                  <path d="M12 14.5l-1-1h2z" fill="currentColor" />
-                                </svg>
-                              ) : category === "dogs" ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-brand-forest/60">
-                                  <path d="M6 5c0-1.657 1-3 3-3h6c2 0 3 1.343 3 3v4.586c0 .53-.21 1.04-.586 1.414L15 13.414V17a3 3 0 01-6 0v-3.586L6.586 11c-.375-.374-.586-.884-.586-1.414V5z" />
-                                  <path d="M6 5.5C4 5.5 3 7 3 9.5c0 3 2 4.5 3 2.5V5.5z" />
-                                  <path d="M18 5.5c2 0 3 1.5 3 4c0 3-2 4.5-3 2.5V5.5z" />
-                                  <circle cx="9.5" cy="9.5" r="1" fill="currentColor" />
-                                  <circle cx="14.5" cy="9.5" r="1" fill="currentColor" />
-                                </svg>
-                              ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-brand-forest/60">
-                                  <path d="M15.5 8.5c0-2.5-2-4.5-4.5-4.5S6.5 6 6.5 8.5c0 1.5.5 2.5 1.5 3.5L7 19.5c0 1 1 1.5 2 1l2.5-3 2.5 3c1 .5 2 0 2-1l-1-7.5c1-1 1.5-2 1.5-3.5z" />
-                                  <path d="M6.5 7.5L3 9l3.5 1.5Z" fill="currentColor" />
-                                  <circle cx="9.5" cy="7.5" r="1" fill="currentColor" />
-                                </svg>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        <h3 className="text-sm font-semibold text-brand-charcoal tracking-tight line-clamp-2 h-10 leading-snug">
-                          {product.name}
-                        </h3>
-
-                        {/* Rating Summary Link */}
-                        {(() => {
-                          const prodReviews = reviews.filter(r => r.productId === product.id && r.status === "approved");
-                          const reviewCount = prodReviews.length;
-                          const avgRating = reviewCount > 0 
-                            ? (prodReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1) 
-                            : "0.0";
-                          const starsNum = Math.round(Number(avgRating));
-
-                          return (
-                            <button
-                              onClick={() => setSelectedReviewProduct(product)}
-                              className="mt-1 flex items-center gap-1 text-[11px] text-stone-500 hover:text-brand-forest transition-colors font-medium focus:outline-none cursor-pointer"
-                            >
-                              <div className="flex text-amber-400">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <span key={i}>{i < starsNum ? "★" : "☆"}</span>
-                                ))}
-                              </div>
-                              <span>({reviewCount > 0 ? `${avgRating} | ${reviewCount}টি রিভিউ` : "কোনো রিভিউ নেই"})</span>
-                            </button>
-                          );
-                        })()}
-
-                        {/* Inventory Badges */}
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {product.stock <= 0 ? (
-                            <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-md border border-red-200 font-bold">
-                              🚫 স্টক নেই (Out of Stock)
-                            </span>
-                          ) : product.stock <= (product.lowStockThreshold || 5) ? (
-                            <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 font-bold animate-pulse">
-                              ⚠️ স্টক সীমিত ({product.stock}টি বাকি)
-                            </span>
-                          ) : (
-                            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-100 font-medium">
-                              ✓ স্টকে আছে ({product.stock}টি)
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Variant Dropdown if variants exist */}
-                        {product.variants && product.variants.length > 0 && (
-                          <div className="mt-3 space-y-1">
-                            <label htmlFor={`var-select-${product.id}`} className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">ভ্যারিয়েন্ট নির্বাচন করুন:</label>
-                            <select
-                              id={`var-select-${product.id}`}
-                              value={selectedVariants[product.id] || product.variants[0]?.id || ""}
-                              onChange={(e) =>
-                                setSelectedVariants((prev) => ({
-                                  ...prev,
-                                  [product.id]: e.target.value,
-                                }))
-                              }
-                              className="w-full bg-brand-beige border border-brand-beige-dark text-[11px] rounded-lg p-2 text-brand-charcoal focus:outline-none focus:border-brand-forest focus:ring-1 focus:ring-brand-forest transition-colors cursor-pointer"
-                            >
-                              {product.variants.map((v) => (
-                                <option key={v.id} value={v.id}>
-                                  {v.size ? `সাইজ: ${v.size}` : ""} {v.color ? `রঙ: ${v.color}` : ""} ({v.stock > 0 ? `${v.stock}টি স্টকে` : "স্টক নেই"})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mt-4 pt-4 border-t border-brand-beige-dark/50 flex items-center justify-between">
-                        <span className="text-base font-bold text-brand-forest">
-                          ৳{product.price.toLocaleString("bn-BD")}
-                        </span>
-                        {(() => {
-                          const chosenVariantId = selectedVariants[product.id] || (product.variants && product.variants[0]?.id) || undefined;
-                          let isOutOfStock = product.stock <= 0;
-                          
-                          if (chosenVariantId && product.variants) {
-                            const variant = product.variants.find(v => v.id === chosenVariantId);
-                            isOutOfStock = !variant || variant.stock <= 0;
-                          }
-
-                          return (
-                            <button
-                              onClick={() => addToCart(product, chosenVariantId)}
-                              disabled={isOutOfStock}
-                              className={`px-4 py-2.5 rounded-full text-xs font-semibold transition-colors focus:outline-none cursor-pointer ${
-                                isOutOfStock
-                                  ? "bg-stone-200 text-stone-400 border border-stone-300 cursor-not-allowed"
-                                  : "bg-brand-forest hover:bg-brand-forest-light text-brand-beige"
-                              }`}
-                            >
-                              {isOutOfStock ? "স্টক নেই" : "কার্টে যোগ করুন"}
-                            </button>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl p-12 text-center border border-brand-beige-dark shadow-sm space-y-4">
-                <span className="text-5xl block">🔍</span>
-                <h3 className="text-base font-semibold text-brand-charcoal">কোনো পণ্য পাওয়া যায়নি!</h3>
-                <p className="text-xs text-stone-500 font-light max-w-sm mx-auto leading-relaxed">
-                  অনুগ্রহ করে আপনার অনুসন্ধানের কি-ওয়ার্ড পরিবর্তন করুন অথবা ফিল্টার রিসেট করে আবার চেষ্টা করুন।
-                </p>
-                <button
-                  onClick={() => {
-                    setSelectedCategory("");
-                    setSelectedBrand("");
-                    setMaxPrice(3000);
-                    setSearchVal("");
-                  }}
-                  className="bg-brand-forest text-brand-beige px-6 py-2.5 rounded-full text-xs font-semibold hover:bg-brand-forest-light transition-colors"
-                >
-                  ক্যাটালগ রিসেট করুন
-                </button>
-              </div>
-            )}
-          </div>
-
-        {/* Reviews Modal Overlay */}
-        {selectedReviewProduct && (
-          <div className="fixed inset-0 bg-brand-charcoal/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
-            <div className="bg-white rounded-3xl border border-brand-beige-dark max-w-lg w-full max-h-[85vh] flex flex-col shadow-xl overflow-hidden animate-scaleUp">
-              
-              {/* Modal Header */}
-              <div className="bg-brand-beige border-b border-brand-beige-dark p-5 flex justify-between items-start gap-4">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-brand-charcoal leading-snug">{selectedReviewProduct.name}</h3>
-                  {(() => {
-                    const prodReviews = reviews.filter(r => r.productId === selectedReviewProduct.id && r.status === "approved");
-                    const avgRating = prodReviews.length > 0 
-                      ? (prodReviews.reduce((sum, r) => sum + r.rating, 0) / prodReviews.length).toFixed(1) 
-                      : "0.0";
-                    const starsNum = Math.round(Number(avgRating));
-
-                    return (
-                      <div className="flex items-center gap-1.5 text-xs text-stone-500 font-semibold">
-                        <div className="flex text-amber-400">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i}>{i < starsNum ? "★" : "☆"}</span>
-                          ))}
-                        </div>
-                        <span>{avgRating} / ৫.০ ({prodReviews.length}টি রিভিউ)</span>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <button
-                  onClick={() => setSelectedReviewProduct(null)}
-                  className="bg-stone-200 hover:bg-stone-300 text-brand-charcoal p-1.5 rounded-full text-xs font-bold transition-colors focus:outline-none cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Modal Body: Scrollable Reviews List */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4 max-h-[50vh]">
-                {(() => {
-                  const prodReviews = reviews.filter(r => r.productId === selectedReviewProduct.id && r.status === "approved");
-                  
-                  if (prodReviews.length === 0) {
-                    return (
-                      <div className="py-8 text-center text-stone-400 space-y-2">
-                        <span className="text-4xl block">💬</span>
-                        <p className="text-xs">এই পণ্যের কোনো রিভিউ অনুমোদিত হয়নি।</p>
-                      </div>
-                    );
-                  }
-
-                  return prodReviews.map((rev) => {
-                    const isVerified = orders.some(o => 
-                      o.customerPhone === rev.customerPhone && 
-                      o.status === "Delivered" && 
-                      o.items.some(item => item.id === selectedReviewProduct.id)
-                    );
-
-                    return (
-                      <div key={rev.id} className="border-b border-brand-beige-dark/60 pb-3.5 space-y-1.5 last:border-b-0 last:pb-0">
-                        <div className="flex justify-between items-start gap-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-xs text-brand-charcoal">{rev.customerName}</span>
-                              {isVerified && (
-                                <span className="text-[9px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200">
-                                  ✓ Verified Purchase
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex text-amber-400 text-[10px] mt-0.5">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <span key={i}>{i < rev.rating ? "★" : "☆"}</span>
-                              ))}
-                            </div>
-                          </div>
-                          <span className="text-[10px] text-stone-400 font-light">{new Date(rev.createdAt).toLocaleDateString("bn-BD")}</span>
-                        </div>
-                        <p className="text-xs text-stone-600 font-light leading-relaxed whitespace-pre-line">{rev.comment}</p>
-                        {rev.photoUrl && (
-                          <div className="mt-2 w-28 h-28 rounded-lg overflow-hidden border border-brand-beige-dark shadow-sm bg-neutral-50">
-                            <img src={rev.photoUrl} alt="Review attachment" className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-
-              {/* Modal Footer */}
-              <div className="bg-brand-beige border-t border-brand-beige-dark p-4 text-center">
-                <button
-                  onClick={() => setSelectedReviewProduct(null)}
-                  className="bg-brand-charcoal hover:bg-brand-charcoal/90 text-brand-beige px-6 py-2 rounded-full text-xs font-semibold shadow-sm transition-colors cursor-pointer"
-                >
-                  বন্ধ করুন
-                </button>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        </div>
-      </div>
-    </div>
-  );
+  return {
+    title: `পেট শপ ক্যাটালগ${category}${query} | Paws & Co. Bangladesh`,
+    description:
+      "বাংলাদেশে বিড়াল, কুকুর ও পাখির জন্য সেরা প্রিমিয়াম কলার, লিটার, খাবার এবং এক্সেসরিজ কিনুন। ক্যাশ অন ডেলিভারি ও দ্রুত হোম ডেলিভারি।",
+    openGraph: {
+      title: "Paws & Co. Pet Accessories Catalog",
+      description: "Premium bilingual pet accessories store in Bangladesh.",
+      images: ["/hero.png"],
+    },
+  };
 }
 
-export default function ProductsCatalog() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cat?: string; search?: string }>;
+}) {
+  const params = await searchParams;
+  const { products } = await getProducts();
+
   return (
-    <Suspense fallback={
-      <div className="bg-brand-beige flex-1 flex items-center justify-center min-h-screen">
-        <div className="text-brand-forest font-semibold text-sm">লোড হচ্ছে...</div>
+    <div className="bg-[#F0EDE6] min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-3xl font-black text-neutral-900 tracking-tight">পেট এক্সেসরিজ কালেকশন</h1>
+          <p className="text-xs text-neutral-600 mt-1">প্রিমিয়াম কোয়ালিটির প্রোডাক্ট খুঁজুন ও অর্ডার করুন</p>
+        </div>
+
+        <ProductsCatalogView
+          initialProducts={products}
+          initialCategory={params.cat}
+          initialSearch={params.search}
+        />
       </div>
-    }>
-      <ProductsCatalogContent />
-    </Suspense>
+    </div>
   );
 }

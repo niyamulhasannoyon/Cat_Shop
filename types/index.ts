@@ -143,7 +143,7 @@ export interface ShopContextType {
   activeStaff: Staff | null;
   staffLogs: StaffActivityLog[];
   addStaff: (name: string, email: string, role: Staff["role"], password?: string) => void;
-  loginStaff: (email: string, password?: string) => boolean;
+  loginStaff: (email: string, password?: string) => Promise<boolean> | boolean;
   logoutStaff: () => void;
   logActivity: (action: string) => void;
 }

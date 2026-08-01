@@ -183,7 +183,7 @@ export default function AdminSidebar() {
     ? activeStaff.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "??";
 
-  const SidebarContent = () => (
+  const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Brand Header */}
       <div className="px-5 pt-6 pb-5 border-b border-white/10 flex-shrink-0">
@@ -358,12 +358,12 @@ export default function AdminSidebar() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <SidebarContent />
+        {renderSidebarContent()}
       </aside>
 
       {/* Desktop Persistent Sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:flex-shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 bg-[#0F1E0D] border-r border-white/8">
-        <SidebarContent />
+        {renderSidebarContent()}
       </aside>
     </>
   );

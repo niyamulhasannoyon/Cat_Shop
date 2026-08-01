@@ -409,7 +409,6 @@ const INITIAL_STAFF: Staff[] = [
     id: "staff-admin",
     name: "Administrator",
     email: "admin@paws.co",
-    password: "admin123",
     role: "Super Admin",
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
   },
@@ -417,7 +416,6 @@ const INITIAL_STAFF: Staff[] = [
     id: "staff-manager",
     name: "Rahat Manager",
     email: "manager@paws.co",
-    password: "manager123",
     role: "Manager",
     createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString()
   },
@@ -425,7 +423,6 @@ const INITIAL_STAFF: Staff[] = [
     id: "staff-support",
     name: "Sumaiya Support",
     email: "support@paws.co",
-    password: "support123",
     role: "Support",
     createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
   }
@@ -575,10 +572,16 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("paws_staff_list", JSON.stringify(INITIAL_STAFF));
       }
 
-      const storedActiveStaff = localStorage.getItem("paws_active_staff");
-      if (storedActiveStaff) {
-        setActiveStaff(JSON.parse(storedActiveStaff));
-      }
+      fetch("/api/admin/me")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.staff) {
+            setActiveStaff(data.staff);
+          } else {
+            setActiveStaff(null);
+          }
+        })
+        .catch(() => setActiveStaff(null));
 
       const storedStaffLogs = localStorage.getItem("paws_staff_logs");
       if (storedStaffLogs) {
@@ -710,7 +713,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
     const productWithId: Product = {
       ...newProduct,
-      id: `prod-${Date.now()}`,
+      id: `prod_${Math.random().toString(36).substring(2, 9)}`,
       stock: calculatedStock,
       lowStockThreshold: threshold,
     };
@@ -1217,33 +1220,41 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     logActivity(`Added new staff member: "${name}" (${role})`);
   };
 
-  const loginStaff = (email: string, password?: string): boolean => {
-    const match = staffList.find(s => s.email.toLowerCase() === email.toLowerCase() && s.password === password);
-    if (match) {
-      setActiveStaff(match);
-      localStorage.setItem("paws_active_staff", JSON.stringify(match));
-      
-      const newLog: StaffActivityLog = {
-        id: `slog-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        staffId: match.id,
-        staffName: match.name,
-        staffEmail: match.email,
-        staffRole: match.role,
-        action: "Logged into the admin panel.",
-        createdAt: new Date().toISOString()
-      };
-      setStaffLogs(prev => {
-        const updated = [newLog, ...prev];
-        localStorage.setItem("paws_staff_logs", JSON.stringify(updated));
-        return updated;
+  const loginStaff = async (email: string, password?: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-
-      return true;
+      const data = await res.json();
+      if (data.success && data.staff) {
+        setActiveStaff(data.staff);
+        const newLog: StaffActivityLog = {
+          id: `slog-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          staffId: data.staff.id,
+          staffName: data.staff.name,
+          staffEmail: data.staff.email,
+          staffRole: data.staff.role,
+          action: "Logged into the admin panel.",
+          createdAt: new Date().toISOString(),
+        };
+        setStaffLogs((prev) => {
+          const updated = [newLog, ...prev];
+          try {
+            localStorage.setItem("paws_staff_logs", JSON.stringify(updated));
+          } catch {}
+          return updated;
+        });
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
     }
-    return false;
   };
 
-  const logoutStaff = () => {
+  const logoutStaff = async () => {
     if (activeStaff) {
       const match = activeStaff;
       const newLog: StaffActivityLog = {
@@ -1253,17 +1264,24 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         staffEmail: match.email,
         staffRole: match.role,
         action: "Logged out from the admin panel.",
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
-      setStaffLogs(prev => {
+      setStaffLogs((prev) => {
         const updated = [newLog, ...prev];
-        localStorage.setItem("paws_staff_logs", JSON.stringify(updated));
+        try {
+          localStorage.setItem("paws_staff_logs", JSON.stringify(updated));
+        } catch {}
         return updated;
       });
     }
 
-    setActiveStaff(null);
-    localStorage.removeItem("paws_active_staff");
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout error", e);
+    } finally {
+      setActiveStaff(null);
+    }
   };
 
   const initiateRefund = (orderId: string, amount: number, method: string, reason: string) => {

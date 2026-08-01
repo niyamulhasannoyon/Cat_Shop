@@ -45,9 +45,9 @@ export default function Navbar() {
             
             {/* Brand Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <a href="/" className="text-2xl font-bold tracking-tight text-brand-forest hover:text-brand-forest-light transition-colors">
+              <Link href="/" className="text-2xl font-bold tracking-tight text-brand-forest hover:text-brand-forest-light transition-colors">
                 Paws<span className="text-brand-charcoal font-light">&Co.</span>
-              </a>
+              </Link>
             </div>
 
             {/* Search Bar (Desktop) */}
@@ -223,16 +223,16 @@ export default function Navbar() {
 
             {/* Nav Categories */}
             <nav className="flex flex-col space-y-3 font-medium text-sm tracking-wide text-brand-charcoal">
-              <a href="/products?cat=cats" className="hover:text-brand-forest py-1 border-b border-brand-beige-dark/50 transition-colors">বিড়াল (Cats)</a>
-              <a href="/products?cat=dogs" className="hover:text-brand-forest py-1 border-b border-brand-beige-dark/50 transition-colors">কুকুর (Dogs)</a>
-              <a href="/products?cat=birds" className="hover:text-brand-forest py-1 border-b border-brand-beige-dark/50 transition-colors">পাখি ও অন্যান্য (Birds & Others)</a>
-              <a href="/bundles" className="hover:text-brand-forest py-1 border-b border-brand-beige-dark/50 font-semibold text-brand-forest transition-colors">বান্ডেল অফার (Bundle & Save)</a>
-              <a href="/tracking" className="hover:text-brand-forest py-1 flex items-center transition-colors">
+              <Link href="/products?cat=cats" className="hover:text-brand-forest py-1 border-b border-brand-beige-dark/50 transition-colors">বিড়াল (Cats)</Link>
+              <Link href="/products?cat=dogs" className="hover:text-brand-forest py-1 border-b border-brand-beige-dark/50 transition-colors">কুকুর (Dogs)</Link>
+              <Link href="/products?cat=birds" className="hover:text-brand-forest py-1 border-b border-brand-beige-dark/50 transition-colors">পাখি ও অন্যান্য (Birds & Others)</Link>
+              <Link href="/bundles" className="hover:text-brand-forest py-1 border-b border-brand-beige-dark/50 font-semibold text-brand-forest transition-colors">বান্ডেল অফার (Bundle & Save)</Link>
+              <Link href="/tracking" className="hover:text-brand-forest py-1 flex items-center transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-brand-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 অর্ডার ট্র্যাকিং
-              </a>
+              </Link>
             </nav>
 
             {/* Mobile Auth Options */}
@@ -286,11 +286,11 @@ export default function Navbar() {
         <div className="hidden md:block border-t border-brand-beige-dark bg-white/50">
           <div className="max-w-7xl mx-auto px-8">
             <nav className="flex space-x-8 py-3 text-xs uppercase tracking-wider font-semibold text-stone-600">
-              <a href="/products?cat=cats" className="hover:text-brand-forest transition-colors">বিড়াল (Cats)</a>
-              <a href="/products?cat=dogs" className="hover:text-brand-forest transition-colors">কুকুর (Dogs)</a>
-              <a href="/products?cat=birds" className="hover:text-brand-forest transition-colors">পাখি ও অন্যান্য</a>
-              <a href="/products?brands" className="hover:text-brand-forest transition-colors">ব্র্যান্ডসমূহ</a>
-              <a href="/bundles" className="text-brand-forest hover:text-brand-forest-light font-bold transition-colors">বান্ডেল অফার 🎉</a>
+              <Link href="/products?cat=cats" className="hover:text-brand-forest transition-colors">বিড়াল (Cats)</Link>
+              <Link href="/products?cat=dogs" className="hover:text-brand-forest transition-colors">কুকুর (Dogs)</Link>
+              <Link href="/products?cat=birds" className="hover:text-brand-forest transition-colors">পাখি ও অন্যান্য</Link>
+              <Link href="/products" className="hover:text-brand-forest transition-colors">ব্র্যান্ডসমূহ</Link>
+              <Link href="/bundles" className="text-brand-forest hover:text-brand-forest-light font-bold transition-colors">বান্ডেল অফার 🎉</Link>
             </nav>
           </div>
         </div>

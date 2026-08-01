@@ -9,15 +9,8 @@ function TrackingPageContent() {
   const { orders } = useShop();
   const trackingIdParam = searchParams.get("id") || "";
 
-  const [inputCode, setInputCode] = useState<string>("");
-  const [activeCode, setActiveCode] = useState<string>("");
-
-  useEffect(() => {
-    if (trackingIdParam) {
-      setInputCode(trackingIdParam);
-      setActiveCode(trackingIdParam);
-    }
-  }, [trackingIdParam]);
+  const [inputCode, setInputCode] = useState<string>(trackingIdParam);
+  const [activeCode, setActiveCode] = useState<string>(trackingIdParam);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

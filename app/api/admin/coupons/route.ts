@@ -1,26 +1,26 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/mockDb";
+import { getCoupons, saveCoupon, toggleCouponStatus, deleteCoupon } from "@/lib/db";
+import { getStaffSession } from "@/lib/auth";
 
 export async function GET() {
-  try {
-    const list = db.getCoupons();
-    const logs = db.getCouponUsageLogs();
-    return NextResponse.json({ success: true, coupons: list, usageLogs: logs });
-  } catch (error) {
-    console.error("GET Coupons Error:", error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
-  }
+  const coupons = await getCoupons();
+  return NextResponse.json({ success: true, coupons });
 }
 
 export async function POST(req: Request) {
+  const session = await getStaffSession();
+  if (!session) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
-    
+
     if (!body.code || !body.discountType || !body.discountValue) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
     }
 
-    const newCoupon = db.addCoupon({
+    const newCoupon = await saveCoupon({
       code: body.code.trim().toUpperCase(),
       discountType: body.discountType,
       discountValue: Number(body.discountValue),
@@ -38,7 +38,34 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, coupon: newCoupon });
   } catch (error) {
-    console.error("POST Coupon Error:", error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
+}
+
+export async function PATCH(req: Request) {
+  const session = await getStaffSession();
+  if (!session) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await req.json();
+  const coupon = await toggleCouponStatus(id);
+  if (!coupon) {
+    return NextResponse.json({ success: false, error: "Coupon not found" }, { status: 404 });
+  }
+  return NextResponse.json({ success: true, coupon });
+}
+
+export async function DELETE(req: Request) {
+  const session = await getStaffSession();
+  if (!session) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ success: false, error: "ID required" }, { status: 400 });
+
+  const deleted = await deleteCoupon(id);
+  return NextResponse.json({ success: deleted });
 }
