@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useShop } from "@/context/ShopContext";
+import { PawIconSvg } from "@/components/ui/Logo";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+
 import AdminHeader from "@/components/admin/AdminHeader";
 
 interface AdminSecurityWrapperProps {
@@ -41,20 +43,15 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
 
             {/* Header */}
             <div className="text-center space-y-3">
-              <div className="mx-auto w-14 h-14 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center mb-3 shadow-inner">
-                <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8">
-                  <ellipse cx="20" cy="23" rx="8" ry="6.5" fill="#10b981" />
-                  <ellipse cx="14" cy="17" rx="3" ry="4" fill="#10b981" />
-                  <ellipse cx="26" cy="17" rx="3" ry="4" fill="#10b981" />
-                  <ellipse cx="10" cy="21" rx="2.2" ry="3" fill="#10b981" />
-                  <ellipse cx="30" cy="21" rx="2.2" ry="3" fill="#10b981" />
-                </svg>
+              <div className="mx-auto flex items-center justify-center mb-3">
+                <PawIconSvg size="lg" />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white tracking-tight">স্টাফ পোর্টাল (Admin)</h2>
                 <p className="text-[11px] text-slate-400 mt-1">Paws & Co. Admin — Staff Login Portal</p>
               </div>
             </div>
+
 
             {/* Error */}
             {errorMsg && (

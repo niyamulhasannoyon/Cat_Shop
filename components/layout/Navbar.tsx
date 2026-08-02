@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useShop } from "@/context/ShopContext";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import Logo from "@/components/ui/Logo";
 
 export default function Navbar() {
   const router = useRouter();
@@ -50,10 +51,9 @@ export default function Navbar() {
             
             {/* Brand Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-2xl font-bold tracking-tight text-brand-forest hover:text-brand-forest-light transition-colors">
-                Paws<span className="text-brand-charcoal font-light">&Co.</span>
-              </Link>
+              <Logo variant="store" size="md" />
             </div>
+
 
             {/* Search Bar (Desktop) */}
             <div className="hidden md:flex flex-1 max-w-lg mx-8">

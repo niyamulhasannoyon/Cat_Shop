@@ -4,6 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useShop } from "@/context/ShopContext";
+import { PawIconSvg } from "@/components/ui/Logo";
+
 
 interface NavItem {
   id: string;
@@ -184,9 +186,10 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
       <div className="px-5 py-5 border-b border-emerald-900/30 flex items-center justify-between flex-shrink-0 bg-[#091510]/80">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <PawsLogo />
+            <PawIconSvg size="sm" />
             <div className="absolute inset-0 bg-emerald-500/20 blur-md rounded-full -z-10" />
           </div>
+
           <div>
             <h1 className="text-sm font-black text-white tracking-tight leading-tight flex items-center gap-1.5">
               Paws & Co.

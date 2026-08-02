@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useShop } from "@/context/ShopContext";
 import ProductCard from "@/components/shop/ProductCard";
+import Logo from "@/components/ui/Logo";
+
 
 function HeroSlider() {
   const HERO_SLIDES = ["/hero.png", "/hero2.png", "/hero3.png"];
@@ -157,12 +159,13 @@ export default function Home() {
       </section>
 
       {/* 4. Footer */}
-      <footer className="w-full bg-[#111] text-neutral-400 py-12 px-4 sm:px-6 lg:px-8 border-t border-neutral-900">
+      <footer className="w-full bg-[#111] text-neutral-400 py-12 px-4 sm:px-6 lg:px-8 border-t border-neutral-900 font-sans">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-neutral-800 text-xs">
           <div className="space-y-3">
-            <h3 className="text-base font-black text-white">Paws & Co.</h3>
-            <p className="leading-relaxed">পোষা প্রাণীদের জন্য স্টাইলিশ ও মানসম্মত এক্সেসরিজ সরবরাহ করতে আমরা প্রতিশ্রুতিবদ্ধ।</p>
+            <Logo variant="dark" showSubtitle size="md" />
+            <p className="leading-relaxed mt-2 text-neutral-400">পোষা প্রাণীদের জন্য স্টাইলিশ ও মানসম্মত এক্সেসরিজ সরবরাহ করতে আমরা প্রতিশ্রুতিবদ্ধ।</p>
           </div>
+
           <div className="space-y-2">
             <h4 className="font-bold text-white uppercase tracking-wider">ক্যাটাগরি</h4>
             <ul className="space-y-1.5">
