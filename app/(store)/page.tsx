@@ -7,7 +7,6 @@ import { useShop } from "@/context/ShopContext";
 import ProductCard from "@/components/shop/ProductCard";
 import Logo from "@/components/ui/Logo";
 
-
 function HeroSlider() {
   const HERO_SLIDES = ["/hero.png", "/hero2.png", "/hero3.png"];
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -94,58 +93,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. Category Cards */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-black text-neutral-900 tracking-tight">পশুপাখির ক্যাটাগরি বেছে নিন</h2>
-          <p className="text-xs text-neutral-500 font-medium">বিড়াল, কুকুর ও পাখির উন্নত মানের এক্সেসরিজ</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-3xl p-6 border border-neutral-200/80 shadow-sm text-center space-y-4 hover:shadow-lg transition-all">
-            <div className="text-4xl">🐱</div>
-            <div>
-              <h3 className="text-lg font-bold text-neutral-900">বিড়াল (Cats)</h3>
-              <p className="text-xs text-neutral-500 mt-1">ভেলভেট কলার, সিলিকা লিটার ও অর্গানিক ফুড</p>
-            </div>
-            <Link href="/products?cat=cats" className="inline-block text-xs font-bold text-brand-forest hover:underline">
-              ব্রাউজ করুন →
-            </Link>
-          </div>
-
-          <div className="bg-white rounded-3xl p-6 border border-neutral-200/80 shadow-sm text-center space-y-4 hover:shadow-lg transition-all">
-            <div className="text-4xl">🐶</div>
-            <div>
-              <h3 className="text-lg font-bold text-neutral-900">কুকুর (Dogs)</h3>
-              <p className="text-xs text-neutral-500 mt-1">লেদার লিশ, শ্যাম্পু ও ডিউরেবল চিউ টয়</p>
-            </div>
-            <Link href="/products?cat=dogs" className="inline-block text-xs font-bold text-brand-forest hover:underline">
-              ব্রাউজ করুন →
-            </Link>
-          </div>
-
-          <div className="bg-white rounded-3xl p-6 border border-neutral-200/80 shadow-sm text-center space-y-4 hover:shadow-lg transition-all">
-            <div className="text-4xl">🦜</div>
-            <div>
-              <h3 className="text-lg font-bold text-neutral-900">পাখি ও অন্যান্য (Birds)</h3>
-              <p className="text-xs text-neutral-500 mt-1">স্টেইনলেস স্টিল খাঁচা ও ফুড ফিডার</p>
-            </div>
-            <Link href="/products?cat=birds" className="inline-block text-xs font-bold text-brand-forest hover:underline">
-              ব্রাউজ করুন →
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Featured Products */}
-      <section className="py-12 bg-white border-y border-neutral-200 px-4 sm:px-6 lg:px-8">
+      {/* 2. Popular/Featured Products */}
+      <section className="py-16 bg-white border-b border-neutral-200 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black text-neutral-900 tracking-tight">পপুলার প্রোডাক্টসমূহ</h2>
-              <p className="text-xs text-neutral-500 font-medium">সবচেয়ে বেশি বিক্রিত এক্সেসরিজ</p>
+              <h2 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">পপুলার প্রোডাক্টসমূহ</h2>
+              <p className="text-xs sm:text-sm text-neutral-500 font-medium mt-1">সবচেয়ে বেশি বিক্রিত এবং জনপ্রিয় এক্সেসরিজ</p>
             </div>
-            <Link href="/products" className="text-xs font-bold text-brand-forest hover:underline">
+            <Link 
+              href="/products" 
+              className="text-xs font-bold text-brand-forest hover:text-brand-forest-light bg-brand-forest/10 hover:bg-brand-forest/15 px-4 py-2 rounded-full transition-all border border-brand-forest/20"
+            >
               সব দেখুন →
             </Link>
           </div>
@@ -158,7 +117,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. Footer */}
+      {/* 3. Footer */}
       <footer className="w-full bg-[#111] text-neutral-400 py-12 px-4 sm:px-6 lg:px-8 border-t border-neutral-900 font-sans">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-neutral-800 text-xs">
           <div className="space-y-3">
@@ -167,20 +126,22 @@ export default function Home() {
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-bold text-white uppercase tracking-wider">ক্যাটাগরি</h4>
+            <h4 className="font-bold text-white uppercase tracking-wider">দ্রুত লিংক</h4>
             <ul className="space-y-1.5">
-              <li><Link href="/products?cat=cats" className="hover:text-white">বিড়ালের পণ্য</Link></li>
-              <li><Link href="/products?cat=dogs" className="hover:text-white">কুকুরের পণ্য</Link></li>
-              <li><Link href="/products?cat=birds" className="hover:text-white">পাখির পণ্য</Link></li>
+              <li><Link href="/" className="hover:text-white">হোম</Link></li>
+              <li><Link href="/products" className="hover:text-white">সকল পণ্য</Link></li>
+              <li><Link href="/bundles" className="hover:text-white">বান্ডেল অফার</Link></li>
             </ul>
           </div>
+
           <div className="space-y-2">
             <h4 className="font-bold text-white uppercase tracking-wider">গ্রাহক সেবা</h4>
             <ul className="space-y-1.5">
               <li><Link href="/tracking" className="hover:text-white">অর্ডার ট্র্যাকিং</Link></li>
-              <li><Link href="/faq" className="hover:text-white">জিজ্ঞাসাবাদ (FAQs)</Link></li>
+              <li><Link href="/cart" className="hover:text-white">শপিং কার্ট</Link></li>
             </ul>
           </div>
+
           <div className="space-y-2">
             <h4 className="font-bold text-white uppercase tracking-wider">যোগাযোগ</h4>
             <p>{siteSettings?.contactAddress || "গুলশান-১, ঢাকা, বাংলাদেশ"}</p>
