@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useShop } from "@/context/ShopContext";
-import AdminSidebar from "@/components/AdminSidebar";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminHeader from "@/components/admin/AdminHeader";
 
 interface AdminSecurityWrapperProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
   const [password, setPassword] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,36 +30,35 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
   /* ────────────────────────────── LOGIN SCREEN ─────────────────────────────── */
   if (!activeStaff) {
     return (
-      <div className="min-h-screen bg-[#0A160A] flex items-center justify-center px-4 font-sans antialiased relative overflow-hidden">
-        {/* Ambient blobs */}
-        <div className="absolute top-[-10%] left-[-5%] w-96 h-96 bg-brand-forest/12 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-80 h-80 bg-amber-500/6 rounded-full blur-[100px] pointer-events-none" />
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 font-sans antialiased relative overflow-hidden text-slate-100">
+        {/* Ambient background glows */}
+        <div className="absolute top-[-10%] left-[-5%] w-96 h-96 bg-emerald-600/15 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
 
         <div className="relative z-10 w-full max-w-sm">
           {/* Card */}
-          <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/8 rounded-3xl p-8 shadow-[0_32px_80px_rgba(0,0,0,0.5)] space-y-7">
+          <div className="bg-slate-900/80 backdrop-blur-2xl border border-slate-800 rounded-3xl p-8 shadow-[0_32px_80px_rgba(0,0,0,0.6)] space-y-6">
 
             {/* Header */}
             <div className="text-center space-y-3">
-              {/* Logo mark */}
-              <div className="mx-auto w-14 h-14 bg-brand-forest/20 border border-brand-forest/30 rounded-2xl flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(45,90,39,0.25)]">
+              <div className="mx-auto w-14 h-14 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center mb-3 shadow-inner">
                 <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8">
-                  <ellipse cx="20" cy="23" rx="8" ry="6.5" fill="#4ade80" fillOpacity=".9" />
-                  <ellipse cx="14" cy="17" rx="3" ry="4" fill="#4ade80" fillOpacity=".9" />
-                  <ellipse cx="26" cy="17" rx="3" ry="4" fill="#4ade80" fillOpacity=".9" />
-                  <ellipse cx="10" cy="21" rx="2.2" ry="3" fill="#4ade80" fillOpacity=".9" />
-                  <ellipse cx="30" cy="21" rx="2.2" ry="3" fill="#4ade80" fillOpacity=".9" />
+                  <ellipse cx="20" cy="23" rx="8" ry="6.5" fill="#10b981" />
+                  <ellipse cx="14" cy="17" rx="3" ry="4" fill="#10b981" />
+                  <ellipse cx="26" cy="17" rx="3" ry="4" fill="#10b981" />
+                  <ellipse cx="10" cy="21" rx="2.2" ry="3" fill="#10b981" />
+                  <ellipse cx="30" cy="21" rx="2.2" ry="3" fill="#10b981" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-black text-white tracking-tight">স্টাফ পোর্টাল</h2>
-                <p className="text-[11px] text-white/35 mt-1">Paws & Co. Admin — Staff Login Portal</p>
+                <h2 className="text-xl font-black text-white tracking-tight">স্টাফ পোর্টাল (Admin)</h2>
+                <p className="text-[11px] text-slate-400 mt-1">Paws & Co. Admin — Staff Login Portal</p>
               </div>
             </div>
 
             {/* Error */}
             {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-300 px-4 py-3 rounded-xl text-[11px] text-center font-semibold">
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 px-4 py-2.5 rounded-xl text-xs text-center font-semibold">
                 ⚠️ {errorMsg}
               </div>
             )}
@@ -65,7 +66,7 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
             {/* Form */}
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                   ইমেইল অ্যাড্রেস
                 </label>
                 <input
@@ -74,12 +75,12 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="staff@paws.co"
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 text-xs focus:outline-none focus:border-brand-forest/60 focus:bg-white/8 placeholder-white/20 transition-all"
+                  className="w-full bg-slate-800/80 border border-slate-700 text-white rounded-xl py-2.5 px-3.5 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 placeholder-slate-500 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[9px] font-bold text-white/30 uppercase tracking-widest block">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                   পাসওয়ার্ড
                 </label>
                 <div className="relative">
@@ -89,12 +90,12 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 pr-16 text-xs focus:outline-none focus:border-brand-forest/60 focus:bg-white/8 placeholder-white/20 transition-all"
+                    className="w-full bg-slate-800/80 border border-slate-700 text-white rounded-xl py-2.5 px-3.5 pr-16 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 placeholder-slate-500 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-white/30 hover:text-white/60 transition-colors cursor-pointer uppercase tracking-wider"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 hover:text-white transition-colors cursor-pointer uppercase tracking-wider"
                   >
                     {showPassword ? "লুকান" : "দেখুন"}
                   </button>
@@ -103,41 +104,48 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
 
               <button
                 type="submit"
-                className="w-full bg-brand-forest hover:bg-brand-forest/90 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:shadow-[0_8px_24px_rgba(45,90,39,0.4)] cursor-pointer mt-1"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md hover:shadow-emerald-600/30 cursor-pointer mt-1"
               >
                 লগইন করুন →
               </button>
             </form>
 
             {/* Demo accounts */}
-            <div className="border-t border-white/8 pt-5 space-y-2">
-              <p className="text-[9px] font-bold text-white/25 uppercase tracking-widest text-center">ডেমো একাউন্ট</p>
+            <div className="border-t border-slate-800 pt-4 space-y-2">
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest text-center">
+                ডেমো একাউন্ট (Quick Login)
+              </p>
               <div className="space-y-1.5">
                 {[
-                  { role: "Super Admin", email: "admin@paws.co", pass: "admin123", color: "text-violet-300" },
-                  { role: "Manager", email: "manager@paws.co", pass: "manager123", color: "text-amber-300" },
-                  { role: "Support", email: "support@paws.co", pass: "support123", color: "text-sky-300" },
+                  { role: "Super Admin", email: "admin@paws.co", pass: "admin123", color: "text-emerald-400" },
+                  { role: "Manager", email: "manager@paws.co", pass: "manager123", color: "text-amber-400" },
+                  { role: "Support", email: "support@paws.co", pass: "support123", color: "text-sky-400" },
                 ].map((acc) => (
                   <button
                     key={acc.role}
                     type="button"
-                    onClick={() => { setEmail(acc.email); setPassword(acc.pass); }}
-                    className="w-full flex items-center justify-between bg-white/3 hover:bg-white/6 border border-white/6 rounded-xl px-3 py-2 transition-all cursor-pointer group"
+                    onClick={() => {
+                      setEmail(acc.email);
+                      setPassword(acc.pass);
+                    }}
+                    className="w-full flex items-center justify-between bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 transition-all cursor-pointer group"
                   >
                     <span className={`text-[10px] font-bold ${acc.color}`}>{acc.role}</span>
-                    <span className="text-[9px] text-white/25 group-hover:text-white/40 transition-colors">{acc.email}</span>
+                    <span className="text-[10px] text-slate-400 group-hover:text-slate-200 transition-colors">
+                      {acc.email}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Back to store */}
-            <div className="text-center">
+            <div className="text-center pt-2">
               <Link
                 href="/"
-                className="text-[10px] text-white/25 hover:text-white/50 transition-colors border-b border-dashed border-white/15 hover:border-white/30"
+                className="text-[11px] text-slate-400 hover:text-white transition-colors border-b border-dashed border-slate-700 hover:border-slate-400"
               >
-                ← লাইভ শপে ফিরে যান
+                ← লাইভ ই-কমার্স শপে যান
               </Link>
             </div>
           </div>
@@ -148,13 +156,22 @@ export default function AdminSecurityWrapper({ children }: AdminSecurityWrapperP
 
   /* ────────────────────────────── APP SHELL ────────────────────────────────── */
   return (
-    <div className="flex min-h-screen bg-[#F0EDE6] font-sans antialiased">
-      {/* Sidebar */}
-      <AdminSidebar />
+    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden font-sans antialiased">
+      {/* Dedicated Admin Sidebar */}
+      <AdminSidebar
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+      />
 
-      {/* Main content area offset to the right of sidebar on desktop */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-56">
-        {children}
+      {/* Main Right Scrollable Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        {/* Dedicated Admin Top Navbar */}
+        <AdminHeader onToggleSidebar={() => setMobileSidebarOpen(true)} />
+
+        {/* Main Content Area */}
+        <main className="p-4 sm:p-6 lg:p-8 flex-1">
+          {children}
+        </main>
       </div>
     </div>
   );

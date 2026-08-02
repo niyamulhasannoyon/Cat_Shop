@@ -1,14 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useShop } from "@/context/ShopContext";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { cartCount, cartTotal } = useShop();
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);

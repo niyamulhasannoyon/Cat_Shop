@@ -37,8 +37,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ShopProvider>
-            <Navbar />
-            <main className="flex-1 flex flex-col">{children}</main>
+            {children}
           </ShopProvider>
         </AuthProvider>
       </body>

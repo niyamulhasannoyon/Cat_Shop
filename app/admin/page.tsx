@@ -2,7 +2,6 @@
 
 import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import AdminSecurityWrapper from "@/components/AdminSecurityWrapper";
 import AdminDashboardOverview from "@/components/admin/AdminDashboardOverview";
 import AdminProductsManager from "@/components/admin/AdminProductsManager";
 import AdminOrdersManager from "@/components/admin/AdminOrdersManager";
@@ -18,7 +17,7 @@ function AdminContent() {
   const tab = searchParams.get("tab") || "dashboard";
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8">
+    <div className="space-y-6">
       {tab === "dashboard" && <AdminDashboardOverview />}
       {tab === "products" && <AdminProductsManager />}
       {tab === "orders" && <AdminOrdersManager />}
@@ -29,16 +28,14 @@ function AdminContent() {
       {tab === "shipping" && <AdminSettingsManager />}
       {tab === "settings" && <AdminSettingsManager />}
       {tab === "staff-logs" && <AdminStaffLogsManager />}
-    </main>
+    </div>
   );
 }
 
 export default function AdminPage() {
   return (
-    <AdminSecurityWrapper>
-      <Suspense fallback={<div className="p-8 font-bold text-neutral-500">লোড হচ্ছে...</div>}>
-        <AdminContent />
-      </Suspense>
-    </AdminSecurityWrapper>
+    <Suspense fallback={<div className="p-8 font-semibold text-slate-500">লোড হচ্ছে...</div>}>
+      <AdminContent />
+    </Suspense>
   );
 }
